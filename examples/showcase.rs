@@ -3,7 +3,7 @@ use std::ops::RangeInclusive;
 use glam::Vec2;
 use lily::{
     util::{CurvePoint, CurvePoints},
-    widgets::{Mseg, MsegHandle, XyHandle, XyPad},
+    widgets::{Mseg, MsegHandle, Slider, SliderHandle, XyHandle, XyPad},
     DEFAULT_STYLE,
 };
 use vizia::*;
@@ -86,9 +86,31 @@ fn main() {
         AppData::default().build(cx);
 
         VStack::new(cx, |cx| {
-            // XY Pad
-            XyPad::new(cx, AppData::xy_data)
-                .on_changing_point(|cx, point| cx.emit(AppEvent::XyControl { point }));
+            HStack::new(cx, |cx| {
+                // XY Pad
+                VStack::new(cx, |cx| {
+                    XyPad::new(cx, AppData::xy_data)
+                        .on_changing_point(|cx, point| cx.emit(AppEvent::XyControl { point }));
+                    Slider::new(cx, AppData::xy_data.map(|pos| pos.x), -1f32..=1f32)
+                        .on_changing(|cx, val| {
+                            cx.emit(AppEvent::XyControl {
+                                point: Vec2::new(val, AppData::xy_data.get(cx).y),
+                            });
+                        })
+                        .height(Pixels(24f32))
+                        .width(Pixels(200f32));
+                })
+                .width(Pixels(200f32));
+                Slider::new(cx, AppData::xy_data.map(|pos| pos.y), 1f32..=-1f32)
+                    .on_changing(|cx, val| {
+                        cx.emit(AppEvent::XyControl {
+                            point: Vec2::new(AppData::xy_data.get(cx).x, val),
+                        });
+                    })
+                    .height(Pixels(200f32))
+                    .width(Pixels(24f32))
+                    .top(Percentage(0f32));
+            });
             // Multi stage envelope generator
             Mseg::new(cx, AppData::mseg_data, AppData::mseg_zoom_data, 8f32)
                 .on_changing_range_start(|cx, x| cx.emit(AppEvent::MsegZoomStart { value: x }))

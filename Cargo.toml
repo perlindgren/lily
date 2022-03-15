@@ -11,6 +11,7 @@ description = "UI widgets for audio plugins using vizia"
 [dependencies]
 femtovg = "*"
 glam = "0.20"
+num-traits = "0.2"
 
 [dependencies.vizia]
 git = "https://github.com/vizia/vizia"

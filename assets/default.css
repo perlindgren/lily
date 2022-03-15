@@ -16,6 +16,14 @@ zoomer .handle {
     background-color: #f54e46;
     border-color: #ffffff5b;
 }
+slider {
+    background-color: #292728;
+    border-radius: 0;
+}
+slider .bar {
+    background-color: #8f3b37;
+    border-color: #f54e46;
+}
 xy {
     background-color: #292728;
     border-color: #ffffff1a;

@@ -23,7 +23,7 @@ cargo run --example showcase --release
 | 🚧          | Zoomer      | Missing drag functionality |
 | 🚧          | MSEG        | Missing visual elements, point insertion, curve adjustment|
 | ❌          | Interactive label | |
-| ❌          | Slider | |
+| ✅          | Slider | Horizontal and vertical |
 | ❌          | Slider discrete | |
 | ❌          | Knob | |
 | ❌          | Knob discrete | |

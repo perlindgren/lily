@@ -56,14 +56,7 @@ where
             on_insert_point: None,
         }
         .build2(cx, |cx| {
-            let background_color: Color = cx
-                .style
-                .background_color
-                .get(cx.current)
-                .cloned()
-                .unwrap_or_default();
             MsegGraph::new(cx, points, range.clone(), max)
-                .background_color(background_color)
                 .on_changing_point(|cx, index, point| {
                     cx.emit(MsegInternalEvent::OnChangingPoint { index, point })
                 })
