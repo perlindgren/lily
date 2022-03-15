@@ -1,0 +1,31 @@
+mseg {
+    height: 200px;
+    background-color: #292728;
+}
+mseg .graph {
+    background-color: #ffffff;
+    border-color: #ffffff80;
+}
+zoomer {
+    background-color: none;
+}
+zoomer .bar {
+    background-color: #8f3b37;
+}
+zoomer .handle {
+    background-color: #f54e46;
+    border-color: #ffffff5b;
+}
+xy {
+    background-color: #292728;
+    border-color: #ffffff1a;
+    width: 200px;
+    height: 200px;
+}
+.point {
+    background-color: #f54e46;
+    border-color: #f54e46;
+}
+.crosshair {
+    border-color: #663231;
+}
