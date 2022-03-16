@@ -73,12 +73,11 @@ where
             match ev {
                 WindowEvent::MouseMove(x, y) => {
                     if let InternalState::Dragging = self.state {
-                        if let Some(callback) = self.on_changing_point.take() {
+                        if let Some(callback) = &self.on_changing_point {
                             let point = Vec2::new(*x, *y);
                             let point_normalized =
                                 cx.cache.get_bounds(cx.current).map_ui_point(point, true);
                             (callback)(cx, point_normalized);
-                            self.on_changing_point = Some(callback);
                         }
                     }
                 }

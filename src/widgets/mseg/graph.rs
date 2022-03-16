@@ -117,9 +117,8 @@ where
                             if let Some(index) = self.active_point_id {
                                 cx.release();
                                 self.is_dragging_point = false;
-                                if let Some(callback) = self.on_remove_point.take() {
+                                if let Some(callback) = &self.on_remove_point {
                                     (callback)(cx, index);
-                                    self.on_remove_point = Some(callback);
                                 }
                             }
                         }
@@ -141,7 +140,7 @@ where
                     // position
                     if self.is_dragging_point {
                         // Up to the user to drag the current point around
-                        if let Some(callback) = self.on_changing_point.take() {
+                        if let Some(callback) = &self.on_changing_point {
                             let active_id = self.active_point_id.unwrap();
                             let mut new_v = if active_id != 0 {
                                 ui_to_data_pos_range(cx, &current_pos, self.range.clone(), self.max)
@@ -163,8 +162,7 @@ where
                                 .clamp(Vec2::new(left_bound, 0f32), Vec2::new(right_bound, 1f32));
 
                             (callback)(cx, active_id, new_v);
-                            self.on_changing_point = Some(callback);
-                        } // asdasdasdasd
+                        }
                     }
                     // If not dragging, perform some other checks
                     else {

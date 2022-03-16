@@ -51,9 +51,8 @@ where
         if let Some(ev) = event.message.downcast::<InternalEvent>() {
             match ev {
                 InternalEvent::Changing(value) => {
-                    if let Some(callback) = self.on_changing.take() {
+                    if let Some(callback) = &self.on_changing {
                         (callback)(cx, *value);
-                        self.on_changing = Some(callback);
                     }
                 }
             }
@@ -104,7 +103,8 @@ where
                             self.last_mouse_pos = Some(pos);
                         }
 
-                        if let Some(callback) = self.on_changing.take() {
+                        // TODO: this isn't really working well...
+                        if let Some(callback) = &self.on_changing {
                             // determine whether we are reacting to a vertical or horizontal slider
                             let rect = cx.cache.get_bounds(cx.current);
                             let orientation = rect.h > rect.w;
@@ -133,8 +133,6 @@ where
                             }
 
                             (callback)(cx, new_val);
-
-                            self.on_changing = Some(callback);
                         }
                         self.last_mouse_pos =
                             Some(self.last_mouse_pos.unwrap() + pos - self.last_mouse_pos.unwrap());

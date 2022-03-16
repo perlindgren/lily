@@ -193,27 +193,18 @@ where
                         ZoomerEvent::SetStart => {
                             // Set the zoomer amount based on the mouse positioning
                             let x = x.clamp(0f32, *range.end() - SMALLEST_RANGE);
-                            if let Some(callback) = self.on_changing_start.take() {
+                            if let Some(callback) = &self.on_changing_start {
                                 (callback)(cx, x);
-                                self.on_changing_start = Some(callback);
                             }
                         }
                         ZoomerEvent::SetEnd => {
                             let x = x.clamp(*range.start() + SMALLEST_RANGE, 1f32);
-                            if let Some(callback) = self.on_changing_end.take() {
+                            if let Some(callback) = &self.on_changing_end {
                                 (callback)(cx, x);
-                                self.on_changing_end = Some(callback);
                             }
                         }
                         ZoomerEvent::SetBoth => {
-                            // Get starting X position, ensuring we have space on both sides
-                            // let x = x.clamp(0f32, *range.end() - SMALLEST_RANGE - (1f32 - *range.end()));
-                            // let x2 = x + (range.end() - range.start());
-                            // if let Some(callback) = self.on_changing_both.take() {
-                            //     (callback)(cx, x..=x2);
-                            //     self.on_changing_both = Some(callback);
-                            // }
-                            // TODO
+                            // TODO:
                         }
                         _ => (),
                     }
