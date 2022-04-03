@@ -1,0 +1,23 @@
+[package]
+name = "lily-derive"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+[dependencies.vizia]
+git = "https://github.com/vizia/vizia"
+features = ["baseview"]
+default-features = false
+
+[dependencies.syn]
+version = "1"
+features = ["full", "parsing", "printing"]
+
+[dependencies.quote]
+version = "1"

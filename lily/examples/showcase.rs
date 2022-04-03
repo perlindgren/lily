@@ -1,11 +1,10 @@
-use std::ops::RangeInclusive;
-
-use glam::Vec2;
 use lily::{
+    math::Vec2,
     util::{CurvePoint, CurvePoints},
-    widgets::{Mseg, MsegHandle, Slider, SliderHandle, XyHandle, XyPad},
+    widgets::*,
     DEFAULT_STYLE,
 };
+use std::ops::RangeInclusive;
 use vizia::*;
 
 #[derive(Lens)]
@@ -91,7 +90,7 @@ fn main() {
                 VStack::new(cx, |cx| {
                     XyPad::new(cx, AppData::xy_data)
                         .on_changing_point(|cx, point| cx.emit(AppEvent::XyControl { point }));
-                    Slider::new(cx, AppData::xy_data.map(|pos| pos.x), -1f32..=1f32)
+                    lily::widgets::Slider::new(cx, AppData::xy_data.map(|pos| pos.x), -1f32..=1f32)
                         .on_changing(|cx, val| {
                             cx.emit(AppEvent::XyControl {
                                 point: Vec2::new(val, AppData::xy_data.get(cx).y),
@@ -101,7 +100,7 @@ fn main() {
                         .width(Pixels(200f32));
                 })
                 .width(Pixels(200f32));
-                Slider::new(cx, AppData::xy_data.map(|pos| pos.y), 1f32..=-1f32)
+                lily::widgets::Slider::new(cx, AppData::xy_data.map(|pos| pos.y), 1f32..=-1f32)
                     .on_changing(|cx, val| {
                         cx.emit(AppEvent::XyControl {
                             point: Vec2::new(AppData::xy_data.get(cx).x, val),

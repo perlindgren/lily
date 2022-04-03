@@ -13,7 +13,7 @@ pub fn ui_to_data_pos_range(
     _ui_to_data_pos_range(
         cx.cache.get_bounds(cx.current),
         *ui_point,
-        range_data.get(cx).clone(),
+        range_data.get(cx),
         max_data,
     )
 }
@@ -26,7 +26,7 @@ pub fn data_to_ui_pos_range(
     _data_to_ui_pos_range(
         cx.cache.get_bounds(cx.current),
         point,
-        range_data.get(cx).clone(),
+        range_data.get(cx),
         max,
     )
 }

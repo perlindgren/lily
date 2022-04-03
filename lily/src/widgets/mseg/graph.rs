@@ -1,13 +1,11 @@
 use crate::util::CurvePoints;
 use femtovg::{Paint, Path};
 use glam::Vec2;
+use lily_derive::Handle;
 use std::{cmp::Ordering, collections::HashMap, ops::RangeInclusive};
 use vizia::*;
 
-use super::{
-    util::{data_to_ui_pos_range, ui_to_data_pos_range},
-    PointCallback,
-};
+use super::util::{data_to_ui_pos_range, ui_to_data_pos_range};
 
 /// The distance in pixels before a node is considered hovered
 const HOVER_RADIUS: f32 = 16f32;
@@ -15,6 +13,8 @@ const HOVER_RADIUS: f32 = 16f32;
 const MIN_RESOLUTION: f32 = 0.01f32;
 
 /// The visuals of the graph
+#[allow(clippy::type_complexity)]
+#[derive(Handle)]
 pub(crate) struct MsegGraph<P, R>
 where
     P: Lens<Target = CurvePoints>,
@@ -37,9 +37,15 @@ where
     classes: HashMap<&'static str, Entity>,
     /// Whether we are in the process of dragging a graph point
     is_dragging_point: bool,
-    on_changing_point: Option<PointCallback>,
+
+    #[callback(usize, Vec2)]
+    on_changing_point: Option<Box<dyn Fn(&mut Context, usize, Vec2)>>,
+
+    #[callback(usize)]
     on_remove_point: Option<Box<dyn Fn(&mut Context, usize)>>,
-    on_insert_point: Option<PointCallback>,
+
+    #[callback(usize, Vec2)]
+    on_insert_point: Option<Box<dyn Fn(&mut Context, usize, Vec2)>>,
 }
 
 impl<P, R> MsegGraph<P, R>
@@ -90,7 +96,7 @@ where
     R: Lens<Target = RangeInclusive<f32>>,
 {
     fn event(&mut self, cx: &mut Context, event: &mut vizia::Event) {
-        let points = self.points.get(cx).clone();
+        let points = self.points.get(cx);
         let ui_points = points.iter().map(|point| {
             data_to_ui_pos_range(
                 cx,
@@ -203,11 +209,6 @@ where
         }
     }
     fn draw(&self, cx: &mut Context, canvas: &mut Canvas) {
-        let (width, height) = (
-            cx.cache.get_width(cx.current),
-            cx.cache.get_height(cx.current),
-        );
-
         let default_color: Color = cx
             .style
             .border_color
@@ -247,13 +248,6 @@ where
             Paint::color(default_color.into()).with_line_width(2f32),
         );
 
-        // Draw points
-        let point_color: Color = cx
-            .style
-            .background_color
-            .get(cx.current)
-            .cloned()
-            .unwrap_or_default();
         let point_entity = *self.classes.get("point").unwrap();
         let active_point_color = cx
             .style
@@ -295,62 +289,5 @@ where
             // mouse_data_pos = ui_to_data_pos(cx, &mouse, self.range,
             // self.max); let point_at_x = lerp(left., right.y, normalized);
         }
-    }
-}
-
-pub trait MsegGraphHandle<P, R>
-where
-    P: Lens<Target = CurvePoints>,
-    R: Lens<Target = RangeInclusive<f32>>,
-{
-    fn on_changing_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, usize, Vec2);
-    fn on_insert_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, usize, Vec2);
-    fn on_remove_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, usize);
-}
-
-impl<'a, P, R> MsegGraphHandle<P, R> for Handle<'a, MsegGraph<P, R>>
-where
-    P: Lens<Target = CurvePoints>,
-    R: Lens<Target = RangeInclusive<f32>>,
-{
-    fn on_changing_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, usize, Vec2),
-    {
-        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-            if let Some(mseg_graph) = view.downcast_mut::<MsegGraph<P, R>>() {
-                mseg_graph.on_changing_point = Some(Box::new(callback));
-            }
-        }
-        self
-    }
-    fn on_insert_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, usize, Vec2),
-    {
-        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-            if let Some(mseg_graph) = view.downcast_mut::<MsegGraph<P, R>>() {
-                mseg_graph.on_insert_point = Some(Box::new(callback));
-            }
-        }
-
-        self
-    }
-    fn on_remove_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, usize),
-    {
-        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-            if let Some(mseg_graph) = view.downcast_mut::<MsegGraph<P, R>>() {
-                mseg_graph.on_remove_point = Some(Box::new(callback));
-            }
-        }
-        self
     }
 }

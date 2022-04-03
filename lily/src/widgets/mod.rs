@@ -1,13 +1,11 @@
 mod mseg;
 mod slider;
-mod slider_discrete;
 mod xy_pad;
 mod zoomer;
 
 pub use {
     mseg::{Mseg, MsegHandle},
-    slider::*,
-    slider_discrete::SliderDiscrete,
-    xy_pad::{XyHandle, XyPad},
+    slider::{Slider, SliderHandle},
+    xy_pad::{XyPad, XyPadHandle},
     zoomer::{Zoomer, ZoomerHandle},
 };

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use femtovg::{Paint, Path};
 use glam::Vec2;
+use lily_derive::Handle;
 use vizia::*;
 
 use crate::util::BoundingBoxExt;
@@ -10,6 +11,7 @@ use crate::util::BoundingBoxExt;
 const HOVER_RADIUS: f32 = 16f32;
 
 /// Controls a single point along a normalized XY axis `(-1,-1)..=(1,1)`.
+#[derive(Handle)]
 pub struct XyPad<P>
 where
     P: Lens<Target = Vec2>,
@@ -18,6 +20,7 @@ where
     state: InternalState,
     // Temporary workaround until we can get custom css stuff directly
     classes: HashMap<&'static str, Entity>,
+    #[callback(Vec2)]
     on_changing_point: Option<Box<dyn Fn(&mut Context, Vec2)>>,
 }
 
@@ -146,7 +149,7 @@ where
         canvas.stroke_path(&mut path, Paint::color(border.into()));
 
         // Data point
-        let point = *self.point.get(cx);
+        let point = self.point.get(cx);
         let ui_point = rect.map_data_point(point, true);
 
         // If within range of the cursor and not currently being dragged, set to being hovered
@@ -210,31 +213,5 @@ where
             &mut path,
             Paint::color(point_border.into()).with_line_width(2f32),
         );
-    }
-}
-
-pub trait XyHandle<P>
-where
-    P: Lens<Target = Vec2>,
-{
-    fn on_changing_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, Vec2);
-}
-
-impl<'a, P> XyHandle<P> for Handle<'a, XyPad<P>>
-where
-    P: Lens<Target = Vec2>,
-{
-    fn on_changing_point<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, Vec2),
-    {
-        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-            if let Some(axis) = view.downcast_mut::<XyPad<P>>() {
-                axis.on_changing_point = Some(Box::new(callback));
-            }
-        }
-        self
     }
 }

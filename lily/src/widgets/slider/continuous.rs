@@ -1,18 +1,21 @@
 use crate::util::RangeExt;
 use femtovg::{Paint, Path};
 use glam::Vec2;
+use lily_derive::Handle;
 use std::{marker::PhantomData, ops::RangeInclusive};
 use vizia::*;
 
 const VERTICAL: bool = true;
 const HORIZONTAL: bool = false;
 
+#[derive(Handle)]
 pub struct Slider<L>
 where
     L: Lens<Target = f32>,
 {
     value: PhantomData<L>,
     range: PhantomData<RangeInclusive<f32>>,
+    #[callback(f32)]
     on_changing: Option<Box<dyn Fn(&mut Context, f32)>>,
 }
 
@@ -59,7 +62,7 @@ where
         }
     }
 }
-
+#[derive(Handle)]
 pub struct SliderBar<L>
 where
     L: Lens<Target = f32>,
@@ -69,6 +72,7 @@ where
     hover: bool,
     active: bool,
     last_mouse_pos: Option<Vec2>,
+    #[callback(f32)]
     on_changing: Option<Box<dyn Fn(&mut Context, f32)>>,
 }
 
@@ -119,7 +123,7 @@ where
                             };
                             let delta_scaled = delta * scalar;
                             // Scale the value to just the small area of our widget
-                            let mut new_val = delta_scaled + *self.value.get(cx);
+                            let mut new_val = delta_scaled + self.value.get(cx);
 
                             // special checks for ranges of negative width
                             if self.range.width().signum() == -1f32 {
@@ -164,12 +168,12 @@ where
         match orientation {
             VERTICAL => {
                 let old_height = rect.h;
-                rect.h = rect.height() * self.range.map(*self.value.get(cx));
+                rect.h = rect.height() * self.range.map(self.value.get(cx));
                 // A little trick since values start from the top and we want
                 // the slider to start at the bottom and go up
                 rect.y += old_height - rect.h;
             }
-            HORIZONTAL => rect.w = rect.width() * self.range.map(*self.value.get(cx)),
+            HORIZONTAL => rect.w = rect.width() * self.range.map(self.value.get(cx)),
         };
 
         // Draw bar background
@@ -222,45 +226,19 @@ where
     }
 }
 
-pub trait SliderHandle<P>
-where
-    P: Lens<Target = f32>,
-{
-    fn on_changing<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32);
-}
-
-impl<'a, P> SliderHandle<P> for Handle<'a, Slider<P>>
-where
-    P: Lens<Target = f32>,
-{
-    fn on_changing<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32),
-    {
-        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-            if let Some(slider) = view.downcast_mut::<Slider<P>>() {
-                slider.on_changing = Some(Box::new(callback));
-            }
-        }
-        self
-    }
-}
-
-impl<'a, P> SliderHandle<P> for Handle<'a, SliderBar<P>>
-where
-    P: Lens<Target = f32>,
-{
-    fn on_changing<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32),
-    {
-        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-            if let Some(slider) = view.downcast_mut::<SliderBar<P>>() {
-                slider.on_changing = Some(Box::new(callback));
-            }
-        }
-        self
-    }
-}
+// impl<'a, P> SliderBarHandle<P> for Handle<'a, SliderBar<P>>
+// where
+//     P: Lens<Target = f32>,
+// {
+//     fn on_changing<F>(self, callback: F) -> Self
+//     where
+//         F: 'static + Fn(&mut Context, f32),
+//     {
+//         if let Some(view) = self.cx.views.get_mut(&self.entity) {
+//             if let Some(slider) = view.downcast_mut::<SliderBar<P>>() {
+//                 slider.on_changing = Some(Box::new(callback));
+//             }
+//         }
+//         self
+//     }
+// }

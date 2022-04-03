@@ -2,25 +2,29 @@ use std::ops::RangeInclusive;
 
 use femtovg::{Paint, Path};
 use glam::Vec2;
+use lily_derive::Handle;
 use vizia::{
     Actions, Binding, Context, Element, Handle, Lens, LensExt, MouseButton,
     Units::{Percentage, Pixels, Stretch},
     View, WindowEvent, ZStack,
 };
 
-use super::mseg::RangeCallback;
-
 const HANDLE_SIZE: f32 = 16.0;
 const SMALLEST_RANGE: f32 = 0.1;
 
+#[allow(clippy::type_complexity)]
+#[derive(Handle)]
 pub struct Zoomer<R>
 where
     R: Lens<Target = RangeInclusive<f32>>,
 {
     range: R,
     status: ZoomerEvent,
-    on_changing_both: Option<RangeCallback>,
+    #[callback(f32, f32)]
+    on_changing_both: Option<Box<dyn Fn(&mut Context, f32, f32)>>,
+    #[callback(f32)]
     on_changing_end: Option<Box<dyn Fn(&mut Context, f32)>>,
+    #[callback(f32)]
     on_changing_start: Option<Box<dyn Fn(&mut Context, f32)>>,
 }
 
@@ -241,72 +245,5 @@ where
         let mut path = Path::new();
         path.rect(0f32, 0f32, width, height);
         canvas.fill_path(&mut path, Paint::color(background_color));
-    }
-}
-
-pub trait ZoomerHandle<R>
-where
-    R: Lens<Target = RangeInclusive<f32>>,
-{
-    fn on_changing_start<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32);
-    fn on_changing_end<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32);
-    fn on_changing_both<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, RangeInclusive<f32>);
-}
-
-impl<'a, R> ZoomerHandle<R> for Handle<'a, Zoomer<R>>
-where
-    R: Lens<Target = RangeInclusive<f32>>,
-{
-    fn on_changing_start<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32),
-    {
-        if let Some(zoomer) = self
-            .cx
-            .views
-            .get_mut(&self.entity)
-            .and_then(|f| f.downcast_mut::<Zoomer<R>>())
-        {
-            zoomer.on_changing_start = Some(Box::new(callback));
-        }
-
-        self
-    }
-
-    fn on_changing_end<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, f32),
-    {
-        if let Some(zoomer) = self
-            .cx
-            .views
-            .get_mut(&self.entity)
-            .and_then(|f| f.downcast_mut::<Zoomer<R>>())
-        {
-            zoomer.on_changing_end = Some(Box::new(callback));
-        }
-
-        self
-    }
-
-    fn on_changing_both<F>(self, callback: F) -> Self
-    where
-        F: 'static + Fn(&mut Context, RangeInclusive<f32>),
-    {
-        if let Some(zoomer) = self
-            .cx
-            .views
-            .get_mut(&self.entity)
-            .and_then(|f| f.downcast_mut::<Zoomer<R>>())
-        {
-            zoomer.on_changing_both = Some(Box::new(callback));
-        }
-        self
     }
 }
