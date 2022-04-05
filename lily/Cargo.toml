@@ -7,9 +7,12 @@ description = "UI widgets for audio plugins using vizia"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-femtovg = "*"
 glam = "0.20"
 num-traits = "0.2"
+
+[dependencies.femtovg]
+git = "https://github.com/femtovg/femtovg"
+rev = "87fe627794f3f793d8e3a338c838a2f8e8a8aa9d"
 
 [dependencies.vizia]
 git = "https://github.com/vizia/vizia"

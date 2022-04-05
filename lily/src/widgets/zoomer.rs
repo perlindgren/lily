@@ -4,9 +4,8 @@ use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
 use vizia::{
-    Actions, Binding, Context, Element, Handle, Lens, LensExt, MouseButton,
-    Units::{Percentage, Pixels, Stretch},
-    View, WindowEvent, ZStack,
+    Actions, Binding, Context, Element, Handle, Lens, LensExt, MouseButton, Units::*, View,
+    WindowEvent, ZStack,
 };
 
 const HANDLE_SIZE: f32 = 16.0;
@@ -52,7 +51,8 @@ impl View for ZoomerControl {
             .background_color
             .get(cx.current)
             .cloned()
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .into();
         let border_color = cx
             .style
             .border_color
@@ -64,7 +64,7 @@ impl View for ZoomerControl {
         path.rect(bounds.x, bounds.y, bounds.w, bounds.h);
 
         // Fill with background color
-        let paint = Paint::color(background_color.into());
+        let paint = Paint::color(background_color);
         // Fill the quad
         canvas.fill_path(&mut path, paint);
 

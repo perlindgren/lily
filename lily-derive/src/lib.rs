@@ -23,8 +23,9 @@ pub fn create_handle_callbacks(input: TokenStream) -> TokenStream {
     let vis = input.vis;
 
     // A hashmap of callback field names as well as the metalist. Only fields with the `callback` attribute are included.
-    let callbacks: HashMap<Ident, MetaList> = if let syn::Data::Struct(data) = input.data {
-        data.fields
+    let output = if let syn::Data::Struct(data) = input.data {
+        let callbacks: Vec<(Ident, MetaList)> = data
+            .fields
             .iter()
             // Only get fields with callback attributes
             .filter_map(|field| {
@@ -44,41 +45,44 @@ pub fn create_handle_callbacks(input: TokenStream) -> TokenStream {
                     _ => None,
                 })
             })
-            .collect()
-    } else {
-        panic!("only structs supported");
-    };
+            .collect();
 
-    let callback_idents: Vec<Ident> = callbacks.iter().map(|(ident, _)| ident.clone()).collect();
-    let callback_types: Vec<Punctuated<_, _>> =
-        callbacks.iter().map(|(_, ty)| ty.nested.clone()).collect();
+        let callback_idents: Vec<Ident> =
+            callbacks.iter().map(|(ident, _)| ident.clone()).collect();
+        let callback_types: Vec<Punctuated<_, _>> =
+            callbacks.iter().map(|(_, ty)| ty.nested.clone()).collect();
 
-    let expanded = quote! {
-        #vis trait #id #generics #bounds
-        {
-            #(
-                fn #callback_idents<F> (self, callback: F) -> Self
-                where
-                    F: 'static + Fn(&mut Context, #callback_types);
-            )*
-        }
+        quote! {
+            #vis trait #id #generics #bounds
+            {
+                #(
+                    fn #callback_idents<F> (self, callback: F) -> Self
+                    where
+                        F: 'static + Fn(&mut Context, #callback_types);
+                )*
+            }
 
-        impl #generics_with_lifetime #id #generics for Handle<#lifetime, #ident #generics> #bounds {
-            #(
-                fn #callback_idents<F>(self, callback: F) -> Self
-                where
-                    F: 'static + Fn(&mut Context, #callback_types) {
-                        if let Some(view) = self.cx.views.get_mut(&self.entity) {
-                            if let Some(down) = view.downcast_mut::<#ident #generics>() {
-                                down.#callback_idents = Some(Box::new(callback));
+            impl #generics_with_lifetime #id #generics for Handle<#lifetime, #ident #generics> #bounds {
+                #(
+                    fn #callback_idents<F>(self, callback: F) -> Self
+                    where
+                        F: 'static + Fn(&mut Context, #callback_types) {
+                            if let Some(view) = self.cx.views.get_mut(&self.entity) {
+                                if let Some(down) = view.downcast_mut::<#ident #generics>() {
+                                    down.#callback_idents = Some(Box::new(callback));
+                                }
                             }
+                            self
                         }
-                        self
-                    }
-            )*
+                )*
+            }
+        }
+    } else {
+        quote! {
+            compile_error!("Only structs are supported.");
         }
     };
 
     // Hand the output tokens back to the compiler
-    TokenStream::from(expanded)
+    TokenStream::from(output)
 }
