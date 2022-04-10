@@ -1,3 +1,4 @@
+use baseview::WindowScalePolicy;
 use lily::{
     math::Vec2,
     util::{CurvePoint, CurvePoints},
@@ -126,5 +127,6 @@ fn main() {
         .child_space(Pixels(24f32))
         .row_between(Pixels(24f32));
     })
+    // .with_scale_policy(WindowScalePolicy::ScaleFactor(1.25))
     .run();
 }

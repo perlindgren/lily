@@ -86,7 +86,7 @@ where
             on_insert_point: None,
             classes,
         }
-        .build2(cx, |_cx| {})
+        .build(cx, |_cx| {})
     }
 }
 

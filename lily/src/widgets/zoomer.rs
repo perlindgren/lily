@@ -39,7 +39,7 @@ struct ZoomerControl;
 
 impl ZoomerControl {
     pub fn new(cx: &mut Context) -> Handle<Self> {
-        Self {}.build(cx)
+        Self {}.build(cx, |_| {})
     }
 }
 
@@ -110,7 +110,7 @@ where
             status: ZoomerEvent::FinishSet,
             range: range.clone(),
         }
-        .build2(cx, |cx| {
+        .build(cx, |cx| {
             let parent_entity = cx.current;
 
             Binding::new(cx, range.clone(), move |cx, _internal| {

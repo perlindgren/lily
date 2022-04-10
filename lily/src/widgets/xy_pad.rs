@@ -53,7 +53,7 @@ where
             state: InternalState::NoOp,
             classes,
         }
-        .build(cx)
+        .build(cx, |_| {})
     }
 }
 

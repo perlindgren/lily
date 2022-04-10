@@ -33,7 +33,7 @@ where
             on_changing: None,
             range: PhantomData::default(),
         }
-        .build2(cx, |cx| {
+        .build(cx, |cx| {
             // Foreground interactive slider
             SliderBar::new(cx, value.clone(), range.clone())
                 .class("bar")
@@ -222,7 +222,7 @@ where
             active: false,
             last_mouse_pos: None,
         }
-        .build(cx)
+        .build(cx, |_| {})
     }
 }
 

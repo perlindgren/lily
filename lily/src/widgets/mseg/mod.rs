@@ -67,7 +67,7 @@ where
             on_remove_point: None,
             on_insert_point: None,
         }
-        .build2(cx, |cx| {
+        .build(cx, |cx| {
             MsegGraph::new(cx, points, range.clone(), max)
                 .on_changing_point(|cx, index, point| {
                     cx.emit(MsegInternalEvent::OnChangingPoint { index, point })
