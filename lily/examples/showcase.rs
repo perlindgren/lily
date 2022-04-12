@@ -1,4 +1,3 @@
-use baseview::WindowScalePolicy;
 use lily::{
     math::Vec2,
     util::{CurvePoint, CurvePoints},

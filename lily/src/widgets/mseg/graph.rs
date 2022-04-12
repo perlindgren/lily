@@ -111,6 +111,8 @@ where
                 WindowEvent::MouseDown(button) => {
                     match button {
                         MouseButton::Left => {
+                            // TODO: only set active point if cursor is within the element.
+                            // Right now it will activate even if the cursor is off the element.
                             if self.active_point_id.is_some() {
                                 cx.capture();
                                 self.is_dragging_point = true;

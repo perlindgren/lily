@@ -10,16 +10,9 @@ description = "UI widgets for audio plugins using vizia"
 glam = "0.20"
 num-traits = "0.2"
 
-[dependencies.baseview]
-git = "https://github.com/RustAudio/baseview"
-rev = "f6e99e9aa6f5aeb6b721cb05e4d882a51d995909"
-
-[dependencies.femtovg]
-git = "https://github.com/femtovg/femtovg"
-rev = "87fe627794f3f793d8e3a338c838a2f8e8a8aa9d"
-
 [dependencies.vizia]
 git = "https://github.com/vizia/vizia"
+branch = "dpi-update"
 features = ["baseview"]
 default-features = false
 
@@ -29,6 +22,11 @@ features = ["derive"]
 
 [dependencies.lily-derive]
 path = "../lily-derive"
+
+[dependencies.femtovg]
+git = "https://github.com/femtovg/femtovg"
+rev = "87fe627794f3f793d8e3a338c838a2f8e8a8aa9d"
+default-features = false
 
 # [dependencies.nih_plug]
 # git = "https://github.com/robbert-vdh/nih-plug"
