@@ -6,6 +6,7 @@ use vizia::*;
 pub trait BoundingBoxExt {
     fn map_ui_point(&self, point: Vec2, centered: bool) -> Vec2;
     fn map_data_point(&self, point: Vec2, centered: bool) -> Vec2;
+    fn get_ratio(&self, point: Vec2, centered: bool) -> Vec2;
 }
 
 impl BoundingBoxExt for BoundingBox {
@@ -32,6 +33,17 @@ impl BoundingBoxExt for BoundingBox {
         let x = (point.x * self.width()) + self.left();
         let y = (point.y * self.height()) + self.top();
         Vec2::new(x, y)
+    }
+
+    /// Gets the width and height ratio of an arbitrary point (that may exist outside of the rect, in which case a ratio over 1 would be provided).
+    fn get_ratio(&self, point: Vec2, centered: bool) -> Vec2 {
+        // convert point to local space
+        let local_point = point - Vec2::from(self.top_left());
+        let result = Vec2::new(local_point.x / self.width(), local_point.y / self.height());
+        match centered {
+            true => (result * 2f32) - 1f32,
+            false => result,
+        }
     }
 }
 

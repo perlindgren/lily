@@ -1,4 +1,4 @@
-use crate::util::RangeExt;
+use crate::util::{BoundingBoxExt, RangeExt};
 use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
@@ -71,7 +71,8 @@ where
     range: RangeInclusive<f32>,
     hover: bool,
     active: bool,
-    last_mouse_pos: Option<Vec2>,
+    /// The offset of the cursor to the handle, set when clicking. This ensures that values don't skip when first dragging to to cursor position
+    offset: f32,
     #[callback(f32)]
     on_changing: Option<Box<dyn Fn(&mut Context, f32)>>,
 }
@@ -91,55 +92,66 @@ where
                     if button == MouseButton::Left {
                         cx.capture();
                         self.active = true;
+                        // set the offset
+                        let rect = cx.cache.get_bounds(cx.current);
+                        let mouse_pos: Vec2 = (cx.mouse.cursorx, cx.mouse.cursory).into();
+                        // get the difference between the mapped mouse pos and the current value
+                        let mouse_mapped = rect.map_ui_point(mouse_pos, true);
+                        self.offset = self.value.get(cx)
+                            - match rect.h > rect.w {
+                                VERTICAL => mouse_mapped.y,
+                                HORIZONTAL => mouse_mapped.x,
+                            };
                     }
                 }
                 WindowEvent::MouseUp(button) => {
                     if button == MouseButton::Left {
                         cx.release();
                         self.active = false;
-                        self.last_mouse_pos = None;
                     }
+                    // reset offset
+                    self.offset = 0f32;
                 }
+                // TODO: figure out a way to not rely on the map_ui_point and instead just have some sort of scalar
                 WindowEvent::MouseMove(x, y) => {
                     if self.active {
-                        let pos = Vec2::new(x, y);
-                        if self.last_mouse_pos.is_none() {
-                            self.last_mouse_pos = Some(pos);
-                        }
-
-                        // TODO: this isn't really working well...
                         if let Some(callback) = &self.on_changing {
                             // determine whether we are reacting to a vertical or horizontal slider
                             let rect = cx.cache.get_bounds(cx.current);
                             let orientation = rect.h > rect.w;
-                            let delta = match orientation {
-                                VERTICAL => pos.y - self.last_mouse_pos.unwrap().y,
-                                HORIZONTAL => pos.x - self.last_mouse_pos.unwrap().x,
+                            // let scalar = match cx.modifiers.contains(Modifiers::SHIFT) {
+                            //     true => 0.1,
+                            //     false => 1f32,
+                            // };
+                            let mut val = {
+                                // let mapped = rect.map_ui_point((x, y).into(), true);
+                                let ratio = rect.get_ratio((x, y).into(), true);
+                                self.offset
+                                    + match orientation {
+                                        VERTICAL => ratio.y,
+                                        HORIZONTAL => ratio.x,
+                                    }
                             };
+
                             // TODO: Determine scalar based on size
-                            let scalar = match cx.modifiers.contains(Modifiers::SHIFT) {
-                                true => 0.01,
-                                false => 0.05,
-                            };
-                            let delta_scaled = delta * scalar;
+
+                            // let delta_scaled = delta * scalar;
                             // Scale the value to just the small area of our widget
-                            let mut new_val = delta_scaled + self.value.get(cx);
+                            // let mut new_val = delta_scaled + self.value.get(cx);
 
                             // special checks for ranges of negative width
                             if self.range.width().signum() == -1f32 {
-                                if new_val > *self.range.start() {
-                                    new_val = *self.range.start();
-                                } else if new_val < *self.range.end() {
-                                    new_val = *self.range.end();
+                                if val > *self.range.start() {
+                                    val = *self.range.start();
+                                } else if val < *self.range.end() {
+                                    val = *self.range.end();
                                 }
                             } else {
-                                new_val = new_val.clamp(*self.range.start(), *self.range.end());
+                                val = val.clamp(*self.range.start(), *self.range.end());
                             }
 
-                            (callback)(cx, new_val);
+                            (callback)(cx, val);
                         }
-                        self.last_mouse_pos =
-                            Some(self.last_mouse_pos.unwrap() + pos - self.last_mouse_pos.unwrap());
                     }
                 }
                 _ => (),
@@ -158,18 +170,20 @@ where
         // determine whether we are drawing a vertical or horizontal slider
         let orientation = rect.h > rect.w;
 
-        if let Some(data) = cx.data() {
+        self.value.view(cx.data().unwrap(), |value| {
             match orientation {
                 VERTICAL => {
                     let old_height = rect.h;
-                    rect.h = rect.height() * self.range.map(self.value.get(data));
+                    rect.h = rect.height() * self.range.map(value.cloned().unwrap_or_default());
                     // A little trick since values start from the top and we want
                     // the slider to start at the bottom and go up
                     rect.y += old_height - rect.h;
                 }
-                HORIZONTAL => rect.w = rect.width() * self.range.map(self.value.get(data)),
+                HORIZONTAL => {
+                    rect.w = rect.width() * self.range.map(value.cloned().unwrap_or_default())
+                }
             }
-        };
+        });
 
         // Draw bar background
         let mut path = Path::new();
@@ -215,7 +229,7 @@ where
             range,
             hover: false,
             active: false,
-            last_mouse_pos: None,
+            offset: 0f32,
         }
         .build(cx, |_| {})
     }
