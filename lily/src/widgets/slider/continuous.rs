@@ -146,34 +146,29 @@ where
             }
         }
     }
-    fn draw(&self, cx: &mut Context, canvas: &mut Canvas) {
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
         let background_color = cx
-            .style
-            .background_color
-            .get(cx.current)
+            .background_color(cx.current())
             .cloned()
             .unwrap_or_default();
-        let active_color = cx
-            .style
-            .border_color
-            .get(cx.current)
-            .cloned()
-            .unwrap_or_default();
-
-        let mut rect = cx.cache.get_bounds(cx.current);
+        let active_color = cx.border_color(cx.current()).cloned().unwrap_or_default();
+        let current = cx.current();
+        let mut rect = cx.cache().get_bounds(current);
 
         // determine whether we are drawing a vertical or horizontal slider
         let orientation = rect.h > rect.w;
 
-        match orientation {
-            VERTICAL => {
-                let old_height = rect.h;
-                rect.h = rect.height() * self.range.map(self.value.get(cx));
-                // A little trick since values start from the top and we want
-                // the slider to start at the bottom and go up
-                rect.y += old_height - rect.h;
+        if let Some(data) = cx.data() {
+            match orientation {
+                VERTICAL => {
+                    let old_height = rect.h;
+                    rect.h = rect.height() * self.range.map(self.value.get(data));
+                    // A little trick since values start from the top and we want
+                    // the slider to start at the bottom and go up
+                    rect.y += old_height - rect.h;
+                }
+                HORIZONTAL => rect.w = rect.width() * self.range.map(self.value.get(data)),
             }
-            HORIZONTAL => rect.w = rect.width() * self.range.map(self.value.get(cx)),
         };
 
         // Draw bar background

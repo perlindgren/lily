@@ -4,8 +4,8 @@ use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
 use vizia::{
-    Actions, Binding, Context, Element, Handle, Lens, LensExt, MouseButton, Units::*, View,
-    WindowEvent, ZStack,
+    Actions, Binding, Context, DrawContext, Element, Handle, Lens, LensExt, MouseButton, Units::*,
+    View, WindowEvent, ZStack,
 };
 
 const HANDLE_SIZE: f32 = 16.0;
@@ -44,21 +44,15 @@ impl ZoomerControl {
 }
 
 impl View for ZoomerControl {
-    fn draw(&self, cx: &mut Context, canvas: &mut vizia::Canvas) {
-        let bounds = cx.cache.get_bounds(cx.current);
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut vizia::Canvas) {
+        let current = cx.current();
+        let bounds = cx.cache().get_bounds(current);
         let background_color = cx
-            .style
-            .background_color
-            .get(cx.current)
+            .background_color(cx.current())
             .cloned()
             .unwrap_or_default()
             .into();
-        let border_color = cx
-            .style
-            .border_color
-            .get(cx.current)
-            .cloned()
-            .unwrap_or_default();
+        let border_color = cx.border_color(cx.current()).cloned().unwrap_or_default();
 
         let mut path = Path::new();
         path.rect(bounds.x, bounds.y, bounds.w, bounds.h);
@@ -88,11 +82,13 @@ impl View for ZoomerControl {
         path.move_to(line_2[0].x, line_2[0].y);
         path.line_to(line_2[1].x, line_2[1].y);
 
-        let mut paint = Paint::color(border_color.into());
-        if cx.hovered == cx.current || cx.captured == cx.current {
-            paint = paint.with_line_width(2f32);
-        } else {
-        };
+        // TODO: figure out new way of doing cx.hovered/cx.catured
+        // let mut paint = Paint::color(border_color.into());
+        // let data = cx.data().unwrap();
+        // if cx.hovered == cx.current() || cx.captured == cx.current {
+        //     paint = paint.with_line_width(2f32);
+        // } else {
+        // };
 
         canvas.stroke_path(&mut path, paint);
     }
@@ -229,15 +225,14 @@ where
         }
     }
 
-    fn draw(&self, cx: &mut Context, canvas: &mut vizia::Canvas) {
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut vizia::Canvas) {
+        let current = cx.current();
         let (width, height) = (
-            cx.cache.get_width(cx.current),
-            cx.cache.get_height(cx.current),
+            cx.cache().get_width(current),
+            cx.cache().get_height(current),
         );
         let background_color: femtovg::Color = cx
-            .style
-            .background_color
-            .get(cx.current)
+            .background_color(cx.current())
             .cloned()
             .unwrap_or_default()
             .into();

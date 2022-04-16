@@ -12,7 +12,7 @@ num-traits = "0.2"
 
 [dependencies.vizia]
 git = "https://github.com/vizia/vizia"
-branch = "dpi-update"
+rev = "b1d742e90e54f70186a0a92ee36f3b18336ff418"
 features = ["baseview"]
 default-features = false
 

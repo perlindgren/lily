@@ -75,6 +75,23 @@ where
         if let Some(ev) = event.message.downcast::<WindowEvent>() {
             match ev {
                 WindowEvent::MouseMove(x, y) => {
+                    let rect = cx.cache.get_bounds(cx.current);
+                    let point = self.point.get(cx);
+                    let ui_point = rect.map_data_point(point, true);
+                    let cursor = Vec2::new(*x, *y);
+                    // If within range of the cursor and not currently being dragged, set to being hovered
+                    if cursor.distance_squared(ui_point) <= HOVER_RADIUS.powi(2) {
+                        if self.state == InternalState::NoOp {
+                            cx.emit(InternalEvent::UpdateState {
+                                state: InternalState::Hovering,
+                            });
+                        }
+                    } else if self.state != InternalState::Dragging {
+                        cx.emit(InternalEvent::UpdateState {
+                            state: InternalState::NoOp,
+                        });
+                    }
+
                     if let InternalState::Dragging = self.state {
                         if let Some(callback) = &self.on_changing_point {
                             let point = Vec2::new(*x, *y);
@@ -107,21 +124,12 @@ where
         }
     }
 
-    fn draw(&self, cx: &mut Context, canvas: &mut Canvas) {
-        let cursor = Vec2::new(cx.mouse.cursorx, cx.mouse.cursory);
-        let rect = cx.cache.get_bounds(cx.current);
-        let bg = cx
-            .style
-            .background_color
-            .get(cx.current)
-            .cloned()
-            .unwrap_or_default();
-        let border = cx
-            .style
-            .border_color
-            .get(cx.current)
-            .cloned()
-            .unwrap_or_default();
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
+        let entity = cx.current();
+        let cursor = Vec2::new(cx.mouse().cursorx, cx.mouse().cursory);
+        let rect = cx.cache().get_bounds(entity);
+        let bg = cx.background_color(entity).cloned().unwrap_or_default();
+        let border = cx.border_color(entity).cloned().unwrap_or_default();
 
         // Draw background shapes
         // Background
@@ -148,28 +156,10 @@ where
         }
         canvas.stroke_path(&mut path, Paint::color(border.into()));
 
-        // Data point
-        let point = self.point.get(cx);
-        let ui_point = rect.map_data_point(point, true);
-
-        // If within range of the cursor and not currently being dragged, set to being hovered
-        if cursor.distance_squared(ui_point) <= HOVER_RADIUS.powi(2) {
-            if self.state == InternalState::NoOp {
-                cx.emit(InternalEvent::UpdateState {
-                    state: InternalState::Hovering,
-                });
-            }
-        } else if self.state != InternalState::Dragging {
-            cx.emit(InternalEvent::UpdateState {
-                state: InternalState::NoOp,
-            });
-        }
         // Draw crosshairs when dragging
         let crosshair_entity = *self.classes.get("crosshair").unwrap();
         let crosshair_color = cx
-            .style
-            .border_color
-            .get(crosshair_entity)
+            .border_color(crosshair_entity)
             .cloned()
             .unwrap_or_default();
         if self.state == InternalState::Dragging {
@@ -181,37 +171,38 @@ where
             canvas.stroke_path(&mut path, Paint::color(crosshair_color.into()));
         }
 
-        // Get custom CSS info from a display none element
-        let point_entity = *self.classes.get("point").unwrap();
-        let point_color = cx
-            .style
-            .background_color
-            .get(point_entity)
-            .cloned()
-            .unwrap_or_default();
-        let point_border = cx
-            .style
-            .border_color
-            .get(point_entity)
-            .cloned()
-            .unwrap_or_default();
+        // Data point
+        self.point.view(cx.data().unwrap(), |point| {
+            let point = *point.unwrap();
+            let point_entity = *self.classes.get("point").unwrap();
+            let ui_point = rect.map_data_point(point, true);
+            let point_border = cx.border_color(point_entity).cloned().unwrap_or_default();
 
-        // Point fill
-        let mut path = Path::new();
-        path.circle(ui_point.x, ui_point.y, 4f32);
-        canvas.fill_path(&mut path, Paint::color(point_color.into()));
+            let point_color = cx
+                .background_color(point_entity)
+                .cloned()
+                .unwrap_or_default();
 
-        // Point outline
-        let mut path = Path::new();
-        match self.state {
-            InternalState::Dragging | InternalState::Hovering => {
-                path.circle(ui_point.x, ui_point.y, 8f32)
+            // Point fill
+            let mut path = Path::new();
+            path.circle(ui_point.x, ui_point.y, 4f32);
+            canvas.fill_path(&mut path, Paint::color(point_color.into()));
+
+            // Point outline
+            let mut path = Path::new();
+            match self.state {
+                InternalState::Dragging | InternalState::Hovering => {
+                    path.circle(ui_point.x, ui_point.y, 8f32)
+                }
+                _ => (),
             }
-            _ => (),
-        }
-        canvas.stroke_path(
-            &mut path,
-            Paint::color(point_border.into()).with_line_width(2f32),
-        );
+
+            // Get custom CSS info from a display none element
+
+            canvas.stroke_path(
+                &mut path,
+                Paint::color(point_border.into()).with_line_width(2f32),
+            );
+        });
     }
 }

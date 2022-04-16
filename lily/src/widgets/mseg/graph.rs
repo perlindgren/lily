@@ -5,7 +5,7 @@ use lily_derive::Handle;
 use std::{cmp::Ordering, collections::HashMap, ops::RangeInclusive};
 use vizia::*;
 
-use super::util::{data_to_ui_pos_range, ui_to_data_pos_range};
+use super::util::{data_to_bounds_pos_range, data_to_ui_pos_range, ui_to_data_pos_range};
 
 /// The distance in pixels before a node is considered hovered
 const HOVER_RADIUS: f32 = 16f32;
@@ -210,86 +210,81 @@ where
             }
         }
     }
-    fn draw(&self, cx: &mut Context, canvas: &mut Canvas) {
-        let default_color: Color = cx
-            .style
-            .border_color
-            .get(cx.current)
-            .cloned()
-            .unwrap_or_default();
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
+        let default_color: Color = cx.border_color(cx.current()).cloned().unwrap_or_default();
 
         // points
-        let points = &**self.points.get(cx);
-        let ui_points: Vec<(_, _)> = points
-            .iter()
-            .enumerate()
-            .map(|point| {
-                (
-                    point.0,
-                    data_to_ui_pos_range(
-                        cx,
-                        Vec2::new(point.1.x, point.1.y),
-                        self.range.clone(),
-                        self.max,
-                    ),
-                )
-            })
-            .collect();
+        let range = self
+            .range
+            .view(cx.data().unwrap(), |range| range.unwrap().clone());
+        let current = cx.current();
+        let bounds = cx.cache().get_bounds(current);
+        self.points.view(cx.data().unwrap(), |points| {
+            let points = points.unwrap();
+            let ui_points: Vec<(_, _)> = points
+                .iter()
+                .enumerate()
+                .map(|point| {
+                    (
+                        point.0,
+                        data_to_bounds_pos_range(
+                            bounds,
+                            Vec2::new(point.1.x, point.1.y),
+                            range.clone(),
+                            self.max,
+                        ),
+                    )
+                })
+                .collect();
 
-        // Draw lines
-        let mut lines = Path::new();
-        for (i, point) in &ui_points {
-            if i == &0 {
-                lines.move_to(point.x, point.y);
+            // Draw lines
+            let mut lines = Path::new();
+            for (i, point) in &ui_points {
+                if i == &0 {
+                    lines.move_to(point.x, point.y);
+                }
+                // Lines
+                lines.line_to(point.x, point.y);
             }
-            // Lines
-            lines.line_to(point.x, point.y);
-        }
-        canvas.stroke_path(
-            &mut lines,
-            Paint::color(default_color.into()).with_line_width(2f32),
-        );
+            canvas.stroke_path(
+                &mut lines,
+                Paint::color(default_color.into()).with_line_width(2f32),
+            );
 
-        let point_entity = *self.classes.get("point").unwrap();
-        let active_point_color = cx
-            .style
-            .background_color
-            .get(point_entity)
-            .cloned()
-            .unwrap_or_default();
-        let point_color = cx
-            .style
-            .border_color
-            .get(point_entity)
-            .cloned()
-            .unwrap_or_default();
+            let point_entity = *self.classes.get("point").unwrap();
+            let active_point_color = cx
+                .background_color(point_entity)
+                .cloned()
+                .unwrap_or_default();
+            let point_color = cx.border_color(point_entity).cloned().unwrap_or_default();
 
-        for (i, point) in &ui_points {
-            // check for hover
-            if self.active_point_id.map(|x| &x == i).unwrap_or_default() {
-                let mut path = Path::new();
-                path.circle(point.x, point.y, 4.0);
-                canvas.fill_path(&mut path, Paint::color(active_point_color.into()));
+            for (i, point) in &ui_points {
+                // check for hover
+                if self.active_point_id.map(|x| &x == i).unwrap_or_default() {
+                    let mut path = Path::new();
+                    path.circle(point.x, point.y, 4.0);
+                    canvas.fill_path(&mut path, Paint::color(active_point_color.into()));
 
-                let mut path = Path::new();
-                path.circle(point.x, point.y, 8.0);
-                canvas.stroke_path(
-                    &mut path,
-                    Paint::color(active_point_color.into()).with_line_width(2f32),
-                );
-            } else {
-                let mut path = Path::new();
-                path.circle(point.x, point.y, 4.0);
-                canvas.fill_path(&mut path, Paint::color(point_color.into()));
+                    let mut path = Path::new();
+                    path.circle(point.x, point.y, 8.0);
+                    canvas.stroke_path(
+                        &mut path,
+                        Paint::color(active_point_color.into()).with_line_width(2f32),
+                    );
+                } else {
+                    let mut path = Path::new();
+                    path.circle(point.x, point.y, 4.0);
+                    canvas.fill_path(&mut path, Paint::color(point_color.into()));
+                }
             }
-        }
 
-        // check to see if we are hovering near an interpolated point
-        if self.active_point_id.is_none() {
-            // TODO:  todo!()
-            // let mouse = Vec2::new(cx.mouse.cursorx, cx.mouse.cursory); let
-            // mouse_data_pos = ui_to_data_pos(cx, &mouse, self.range,
-            // self.max); let point_at_x = lerp(left., right.y, normalized);
-        }
+            // check to see if we are hovering near an interpolated point
+            if self.active_point_id.is_none() {
+                // TODO:  todo!()
+                // let mouse = Vec2::new(cx.mouse.cursorx, cx.mouse.cursory); let
+                // mouse_data_pos = ui_to_data_pos(cx, &mouse, self.range,
+                // self.max); let point_at_x = lerp(left., right.y, normalized);
+            }
+        });
     }
 }

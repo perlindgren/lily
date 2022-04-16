@@ -23,7 +23,7 @@ pub fn data_to_ui_pos_range(
     range_data: impl Lens<Target = RangeInclusive<f32>>,
     max: f32,
 ) -> Vec2 {
-    _data_to_ui_pos_range(
+    data_to_bounds_pos_range(
         cx.cache.get_bounds(cx.current),
         point,
         range_data.get(cx),
@@ -52,7 +52,7 @@ fn _ui_to_data_pos_range(
     Vec2::new(x, y)
 }
 
-fn _data_to_ui_pos_range(
+pub fn data_to_bounds_pos_range(
     bounds: BoundingBox,
     point: Vec2,
     range: RangeInclusive<f32>,
@@ -95,7 +95,7 @@ mod tests {
     #[test]
     fn gets_ui_point_from_data() {
         let rect = rect();
-        let ui_point = _data_to_ui_pos_range(rect, Vec2::new(0.6, 0.5), 0.2..=0.4, 2f32);
+        let ui_point = data_to_bounds_pos_range(rect, Vec2::new(0.6, 0.5), 0.2..=0.4, 2f32);
         assert_eq!(ui_point.x.round(), 110f32);
         assert_eq!(ui_point.y.round(), 60f32);
     }
