@@ -1,2 +1,2 @@
 mod continuous;
-pub use continuous::{Slider, SliderHandle};
+pub use continuous::{DragSlider, DragSliderHandle};

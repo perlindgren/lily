@@ -97,118 +97,120 @@ where
 {
     fn event(&mut self, cx: &mut Context, event: &mut vizia::Event) {
         let points = self.points.get(cx);
-        let ui_points = points.iter().map(|point| {
-            data_to_ui_pos_range(
-                cx,
-                Vec2::new(point.x, point.y),
-                self.range.clone(),
-                self.max,
-            )
-        });
+        let ui_points: Vec<Vec2> = points
+            .iter()
+            .map(|point| {
+                data_to_ui_pos_range(
+                    cx,
+                    Vec2::new(point.x, point.y),
+                    self.range.clone(),
+                    self.max,
+                )
+            })
+            .collect();
         // Window events to move points
-        if let Some(ev) = event.message.downcast::<WindowEvent>() {
-            match ev {
-                WindowEvent::MouseDown(button) => {
-                    match button {
-                        MouseButton::Left => {
-                            // TODO: only set active point if cursor is within the element.
-                            // Right now it will activate even if the cursor is off the element.
-                            if self.active_point_id.is_some() {
-                                cx.capture();
-                                self.is_dragging_point = true;
-                            } else {
-                                // TODO: create a new point
-                            }
+        event.map(|ev: &WindowEvent, _| match *ev {
+            WindowEvent::MouseDown(button) => {
+                match button {
+                    MouseButton::Left => {
+                        // TODO: only set active point if cursor is within the element.
+                        // Right now it will activate even if the cursor is off the element.
+                        if self.active_point_id.is_some() {
+                            cx.capture();
+                            self.is_dragging_point = true;
+                        } else {
+                            // TODO: create a new point
                         }
-                        MouseButton::Right => {
-                            // Delete a currently active point
-                            if let Some(index) = self.active_point_id {
-                                cx.release();
-                                self.is_dragging_point = false;
-                                if let Some(callback) = &self.on_remove_point {
-                                    (callback)(cx, index);
-                                }
-                            }
-                        }
-                        _ => (),
                     }
+                    MouseButton::Right => {
+                        // Delete a currently active point
+                        if let Some(index) = self.active_point_id {
+                            cx.release();
+                            self.is_dragging_point = false;
+                            if let Some(callback) = &self.on_remove_point {
+                                (callback)(cx, index);
+                            }
+                        }
+                    }
+                    _ => (),
                 }
-                // Release the current context and signal that we are no longer
-                // dragging a point
-                WindowEvent::MouseUp(button) => {
-                    if *button == MouseButton::Left {
-                        cx.release();
-                        self.is_dragging_point = false;
-                    }
-                }
-                // Perform dragging actions depending on state
-                WindowEvent::MouseMove(x, y) => {
-                    let current_pos = Vec2::new(*x, *y);
-                    // Drag around the point to match the current cursor
-                    // position
-                    if self.is_dragging_point {
-                        // Up to the user to drag the current point around
-                        if let Some(callback) = &self.on_changing_point {
-                            let active_id = self.active_point_id.unwrap();
-                            let mut new_v = if active_id != 0 {
-                                ui_to_data_pos_range(cx, &current_pos, self.range.clone(), self.max)
-                            } else {
-                                Vec2::ZERO
-                            };
-                            if active_id == points.len() - 1 {
-                                new_v.y = 0f32;
-                            }
-
-                            // Clamp the point (and check for left and right
-                            // bounds)
-                            let right_bound =
-                                points.get(active_id + 1).map(|p| p.x).unwrap_or(self.max)
-                                    - MIN_RESOLUTION;
-                            let left_bound = points.get(active_id - 1).map(|p| p.x).unwrap_or(0f32)
-                                + MIN_RESOLUTION;
-                            let new_v = new_v
-                                .clamp(Vec2::new(left_bound, 0f32), Vec2::new(right_bound, 1f32));
-
-                            (callback)(cx, active_id, new_v);
-                        }
-                    }
-                    // If not dragging, perform some other checks
-                    else {
-                        // determine if we are hovering within the range of a
-                        //point if we are not currently dragging points
-                        let mut filtered_points: Vec<(usize, Vec2)> = ui_points
-                            .enumerate()
-                            .filter_map(|(i, point)| {
-                                if point.distance_squared(current_pos) <= HOVER_RADIUS.powi(2) {
-                                    Some((i, point))
-                                } else {
-                                    None
-                                }
-                            })
-                            .collect();
-                        // Sort points by shortest to furthest distance This is
-                        // important in the case that multiple hovered points
-                        // exist that we select the one closest to the cursor.
-                        filtered_points.sort_by(|a, b| {
-                            // Use distance squared to avoid `sqrt` operations
-                            a.1.distance_squared(current_pos)
-                                .partial_cmp(&b.1.distance_squared(current_pos))
-                                .unwrap_or(Ordering::Equal)
-                        });
-                        // Store our point ID in the case that it exists (i.e.,
-                        // our pointer is close enough to at least one node)
-                        match filtered_points.first() {
-                            Some((closest_point_id, ..)) => {
-                                self.active_point_id = Some(*closest_point_id);
-                            }
-                            _ => self.active_point_id = None,
-                        }
-                    }
-                }
-                // WindowEvent::MouseOut => todo!(),
-                _ => (),
             }
-        }
+            // Release the current context and signal that we are no longer
+            // dragging a point
+            WindowEvent::MouseUp(button) => {
+                if button == MouseButton::Left {
+                    cx.release();
+                    self.is_dragging_point = false;
+                }
+            }
+            // Perform dragging actions depending on state
+            WindowEvent::MouseMove(x, y) => {
+                let current_pos = Vec2::new(x, y);
+                // Drag around the point to match the current cursor
+                // position
+                if self.is_dragging_point {
+                    // Up to the user to drag the current point around
+                    if let Some(callback) = &self.on_changing_point {
+                        let active_id = self.active_point_id.unwrap();
+                        let mut new_v = if active_id != 0 {
+                            ui_to_data_pos_range(cx, &current_pos, self.range.clone(), self.max)
+                        } else {
+                            Vec2::ZERO
+                        };
+                        if active_id == points.len() - 1 {
+                            new_v.y = 0f32;
+                        }
+
+                        // Clamp the point (and check for left and right
+                        // bounds)
+                        let right_bound =
+                            points.get(active_id + 1).map(|p| p.x).unwrap_or(self.max)
+                                - MIN_RESOLUTION;
+                        let left_bound =
+                            points.get(active_id - 1).map(|p| p.x).unwrap_or(0f32) + MIN_RESOLUTION;
+                        let new_v =
+                            new_v.clamp(Vec2::new(left_bound, 0f32), Vec2::new(right_bound, 1f32));
+
+                        (callback)(cx, active_id, new_v);
+                    }
+                }
+                // If not dragging, perform some other checks
+                else {
+                    // determine if we are hovering within the range of a
+                    //point if we are not currently dragging points
+                    let mut filtered_points: Vec<(usize, Vec2)> = ui_points
+                        .iter()
+                        .enumerate()
+                        .filter_map(|(i, point)| {
+                            if point.distance_squared(current_pos) <= HOVER_RADIUS.powi(2) {
+                                Some((i, *point))
+                            } else {
+                                None
+                            }
+                        })
+                        .collect();
+                    // Sort points by shortest to furthest distance This is
+                    // important in the case that multiple hovered points
+                    // exist that we select the one closest to the cursor.
+                    filtered_points.sort_by(|a, b| {
+                        // Use distance squared to avoid `sqrt` operations
+                        a.1.distance_squared(current_pos)
+                            .partial_cmp(&b.1.distance_squared(current_pos))
+                            .unwrap_or(Ordering::Equal)
+                    });
+                    // Store our point ID in the case that it exists (i.e.,
+                    // our pointer is close enough to at least one node)
+                    match filtered_points.first() {
+                        Some((closest_point_id, ..)) => {
+                            self.active_point_id = Some(*closest_point_id);
+                        }
+                        _ => self.active_point_id = None,
+                    }
+                }
+            }
+            // WindowEvent::MouseOut => todo!(),
+            _ => (),
+        });
     }
     fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
         let default_color: Color = cx.border_color(cx.current()).cloned().unwrap_or_default();

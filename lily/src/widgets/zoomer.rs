@@ -52,7 +52,6 @@ impl View for ZoomerControl {
             .cloned()
             .unwrap_or_default()
             .into();
-        let border_color = cx.border_color(cx.current()).cloned().unwrap_or_default();
 
         let mut path = Path::new();
         path.rect(bounds.x, bounds.y, bounds.w, bounds.h);
@@ -175,54 +174,52 @@ where
     }
 
     fn event(&mut self, cx: &mut Context, event: &mut vizia::Event) {
-        if let Some(ev) = event.message.downcast::<ZoomerEvent>() {
+        event.map(|ev: &ZoomerEvent, _| {
             self.status = *ev;
-        }
+        });
         #[allow(clippy::collapsible_match)]
-        if let Some(ev) = event.message.downcast::<WindowEvent>() {
-            match ev {
-                // Respond to cursor movements when we are setting the start or end
-                WindowEvent::MouseMove(x, _y) => {
-                    let width = cx.cache.get_width(cx.current);
-                    let range = self.range.get(cx);
-                    // adjust X to be relative
-                    let mut x = *x - cx.cache.get_bounds(cx.current).x;
-                    // get new data x
-                    x /= width;
-                    match self.status {
-                        ZoomerEvent::SetStart => {
-                            // Set the zoomer amount based on the mouse positioning
-                            let x = x.clamp(0f32, *range.end() - SMALLEST_RANGE);
-                            if let Some(callback) = &self.on_changing_start {
-                                (callback)(cx, x);
-                            }
+        event.map(|ev: &WindowEvent, _| match *ev {
+            // Respond to cursor movements when we are setting the start or end
+            WindowEvent::MouseMove(x, _y) => {
+                let width = cx.cache.get_width(cx.current);
+                let range = self.range.get(cx);
+                // adjust X to be relative
+                let mut x = x - cx.cache.get_bounds(cx.current).x;
+                // get new data x
+                x /= width;
+                match self.status {
+                    ZoomerEvent::SetStart => {
+                        // Set the zoomer amount based on the mouse positioning
+                        let x = x.clamp(0f32, *range.end() - SMALLEST_RANGE);
+                        if let Some(callback) = &self.on_changing_start {
+                            (callback)(cx, x);
                         }
-                        ZoomerEvent::SetEnd => {
-                            let x = x.clamp(*range.start() + SMALLEST_RANGE, 1f32);
-                            if let Some(callback) = &self.on_changing_end {
-                                (callback)(cx, x);
-                            }
+                    }
+                    ZoomerEvent::SetEnd => {
+                        let x = x.clamp(*range.start() + SMALLEST_RANGE, 1f32);
+                        if let Some(callback) = &self.on_changing_end {
+                            (callback)(cx, x);
                         }
-                        ZoomerEvent::SetBoth => {
-                            // TODO:
-                        }
-                        _ => (),
                     }
-                }
-                WindowEvent::MouseDown(button) => {
-                    if *button == MouseButton::Left {
-                        cx.capture();
+                    ZoomerEvent::SetBoth => {
+                        // TODO:
                     }
+                    _ => (),
                 }
-                WindowEvent::MouseUp(button) => {
-                    if button == &MouseButton::Left {
-                        cx.emit(ZoomerEvent::FinishSet);
-                        cx.release();
-                    }
-                }
-                _ => (),
             }
-        }
+            WindowEvent::MouseDown(button) => {
+                if button == MouseButton::Left {
+                    cx.capture();
+                }
+            }
+            WindowEvent::MouseUp(button) => {
+                if button == MouseButton::Left {
+                    cx.emit(ZoomerEvent::FinishSet);
+                    cx.release();
+                }
+            }
+            _ => (),
+        });
     }
 
     fn draw(&self, cx: &mut DrawContext, canvas: &mut vizia::Canvas) {

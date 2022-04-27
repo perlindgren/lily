@@ -98,42 +98,40 @@ where
     }
 
     fn event(&mut self, cx: &mut Context, event: &mut Event) {
-        if let Some(ev) = event.message.downcast::<MsegInternalEvent>() {
-            match ev {
-                MsegInternalEvent::OnChangingRangeStart(x) => {
-                    if let Some(callback) = &self.on_changing_range_start {
-                        (callback)(cx, *x);
-                    }
+        event.map(|ev: &MsegInternalEvent, _| match *ev {
+            MsegInternalEvent::OnChangingRangeStart(x) => {
+                if let Some(callback) = &self.on_changing_range_start {
+                    (callback)(cx, x);
                 }
-                MsegInternalEvent::OnChangingRangeEnd(x) => {
-                    if let Some(callback) = &self.on_changing_range_end {
-                        (callback)(cx, *x);
-                    }
+            }
+            MsegInternalEvent::OnChangingRangeEnd(x) => {
+                if let Some(callback) = &self.on_changing_range_end {
+                    (callback)(cx, x);
                 }
-                MsegInternalEvent::OnChangingRangeBoth { start, end } => {
-                    if let Some(callback) = &self.on_changing_range_both {
-                        (callback)(cx, *start..=*end);
-                    }
+            }
+            MsegInternalEvent::OnChangingRangeBoth { start, end } => {
+                if let Some(callback) = &self.on_changing_range_both {
+                    (callback)(cx, start..=end);
                 }
-                MsegInternalEvent::OnChangingPoint { index, point } => {
-                    if let Some(callback) = &self.on_changing_point {
-                        (callback)(cx, *index, *point);
-                    }
+            }
+            MsegInternalEvent::OnChangingPoint { index, point } => {
+                if let Some(callback) = &self.on_changing_point {
+                    (callback)(cx, index, point);
                 }
-                MsegInternalEvent::OnRemovePoint { index } => {
-                    // Delete the point if not the first or last in the vector
-                    if *index != 0 && *index != self.points.get(cx).len() - 1 {
-                        if let Some(callback) = &self.on_remove_point {
-                            (callback)(cx, *index);
-                        }
-                    }
-                }
-                MsegInternalEvent::OnInsertPoint { index, point } => {
-                    if let Some(callback) = &self.on_insert_point {
-                        (callback)(cx, *index, *point);
+            }
+            MsegInternalEvent::OnRemovePoint { index } => {
+                // Delete the point if not the first or last in the vector
+                if index != 0 && index != self.points.get(cx).len() - 1 {
+                    if let Some(callback) = &self.on_remove_point {
+                        (callback)(cx, index);
                     }
                 }
             }
-        }
+            MsegInternalEvent::OnInsertPoint { index, point } => {
+                if let Some(callback) = &self.on_insert_point {
+                    (callback)(cx, index, point);
+                }
+            }
+        });
     }
 }

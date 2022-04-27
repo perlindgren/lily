@@ -12,7 +12,7 @@ proc-macro = true
 
 [dependencies.vizia]
 git = "https://github.com/vizia/vizia"
-branch = "dpi-update"
+branch = "main"
 features = ["baseview"]
 default-features = false
 

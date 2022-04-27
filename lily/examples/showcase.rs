@@ -48,39 +48,34 @@ pub enum AppEvent {
 
 impl Model for AppData {
     fn event(&mut self, _cx: &mut Context, event: &mut Event) {
-        if let Some(event) = event.message.downcast().cloned() {
-            match event {
-                AppEvent::XyControl { point } => {
-                    self.xy_data = point;
-                }
-                AppEvent::MsegZoomStart { value } => {
-                    self.mseg_zoom_data = value..=*self.mseg_zoom_data.end()
-                }
-                AppEvent::MsegZoomEnd { value } => {
-                    self.mseg_zoom_data = *self.mseg_zoom_data.start()..=value
-                }
-                AppEvent::MsegPoint { index, pos } => {
-                    if let Some(p) = self.mseg_data.get_mut(index) {
-                        p.x = pos.x;
-                        p.y = pos.y
-                    }
-                }
-                AppEvent::MsegInsertPoint { index, pos } => {
-                    self.mseg_data.insert(index, CurvePoint::from(pos));
-                }
-                AppEvent::MsegRemovePoint { index } => {
-                    self.mseg_data.remove(index);
+        event.map(|ev: &AppEvent, _| match *ev {
+            AppEvent::XyControl { point } => {
+                self.xy_data = point;
+            }
+            AppEvent::MsegZoomStart { value } => {
+                self.mseg_zoom_data = value..=*self.mseg_zoom_data.end()
+            }
+            AppEvent::MsegZoomEnd { value } => {
+                self.mseg_zoom_data = *self.mseg_zoom_data.start()..=value
+            }
+            AppEvent::MsegPoint { index, pos } => {
+                if let Some(p) = self.mseg_data.get_mut(index) {
+                    p.x = pos.x;
+                    p.y = pos.y
                 }
             }
-        }
+            AppEvent::MsegInsertPoint { index, pos } => {
+                self.mseg_data.insert(index, CurvePoint::from(pos));
+            }
+            AppEvent::MsegRemovePoint { index } => {
+                self.mseg_data.remove(index);
+            }
+        });
     }
 }
 
 fn main() {
-    let window = WindowDescription::new()
-        .with_title("Showcase")
-        .with_inner_size(500, 500);
-    Application::new(window, |cx| {
+    Application::new(|cx| {
         cx.add_theme(DEFAULT_STYLE);
         AppData::default().build(cx);
 
@@ -90,7 +85,7 @@ fn main() {
                 VStack::new(cx, |cx| {
                     XyPad::new(cx, AppData::xy_data)
                         .on_changing_point(|cx, point| cx.emit(AppEvent::XyControl { point }));
-                    lily::widgets::Slider::new(cx, AppData::xy_data.map(|pos| pos.x), -1f32..=1f32)
+                    DragSlider::new(cx, AppData::xy_data.map(|pos| pos.x), -1f32..=1f32)
                         .on_changing(|cx, val| {
                             cx.emit(AppEvent::XyControl {
                                 point: Vec2::new(val, AppData::xy_data.get(cx).y),
@@ -100,7 +95,7 @@ fn main() {
                         .width(Pixels(200f32));
                 })
                 .width(Pixels(200f32));
-                lily::widgets::Slider::new(cx, AppData::xy_data.map(|pos| pos.y), 1f32..=-1f32)
+                DragSlider::new(cx, AppData::xy_data.map(|pos| pos.y), 1f32..=-1f32)
                     .on_changing(|cx, val| {
                         cx.emit(AppEvent::XyControl {
                             point: Vec2::new(AppData::xy_data.get(cx).x, val),

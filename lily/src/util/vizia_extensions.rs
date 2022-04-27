@@ -6,7 +6,8 @@ use vizia::*;
 pub trait BoundingBoxExt {
     fn map_ui_point(&self, point: Vec2, centered: bool) -> Vec2;
     fn map_data_point(&self, point: Vec2, centered: bool) -> Vec2;
-    fn get_ratio(&self, point: Vec2, centered: bool) -> Vec2;
+    fn map_ui_point_unbounded(&self, point: Vec2, centered: bool) -> Vec2;
+    fn contains_point(&self, point: Vec2) -> bool;
 }
 
 impl BoundingBoxExt for BoundingBox {
@@ -36,7 +37,7 @@ impl BoundingBoxExt for BoundingBox {
     }
 
     /// Gets the width and height ratio of an arbitrary point (that may exist outside of the rect, in which case a ratio over 1 would be provided).
-    fn get_ratio(&self, point: Vec2, centered: bool) -> Vec2 {
+    fn map_ui_point_unbounded(&self, point: Vec2, centered: bool) -> Vec2 {
         // convert point to local space
         let local_point = point - Vec2::from(self.top_left());
         let result = Vec2::new(local_point.x / self.width(), local_point.y / self.height());
@@ -44,6 +45,13 @@ impl BoundingBoxExt for BoundingBox {
             true => (result * 2f32) - 1f32,
             false => result,
         }
+    }
+
+    fn contains_point(&self, point: Vec2) -> bool {
+        point.x <= self.right()
+            && point.x >= self.left()
+            && point.y <= self.bottom()
+            && point.y >= self.top()
     }
 }
 
@@ -59,6 +67,23 @@ mod tests {
             w: 100f32,
             h: 100f32,
         }
+    }
+
+    #[test]
+    fn get_map_unbounded() {
+        let rect = rect();
+        let cursor = Vec2::new(300f32, 300f32);
+        assert_eq!(
+            rect.map_ui_point_unbounded(cursor, false),
+            Vec2::splat(2f32)
+        );
+    }
+
+    #[test]
+    fn get_map_unbounded_center() {
+        let rect = rect();
+        let cursor = Vec2::new(250f32, 250f32);
+        assert_eq!(rect.map_ui_point_unbounded(cursor, true), Vec2::splat(2f32));
     }
 
     #[test]
