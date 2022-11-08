@@ -1,6 +1,7 @@
 //! Trait extensions for making working with Vizia even nicer
 
 use glam::Vec2;
+use vizia::cache::BoundingBox;
 use vizia::*;
 
 pub trait BoundingBoxExt {

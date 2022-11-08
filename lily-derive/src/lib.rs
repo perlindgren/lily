@@ -56,7 +56,7 @@ pub fn create_handle_callbacks(input: TokenStream) -> TokenStream {
                 #(
                     fn #callback_idents<F> (self, callback: F) -> Self
                     where
-                        F: 'static + Fn(&mut Context, #callback_types);
+                        F: 'static + Fn(&mut EventContext, #callback_types);
                 )*
             }
 
@@ -64,7 +64,7 @@ pub fn create_handle_callbacks(input: TokenStream) -> TokenStream {
                 #(
                     fn #callback_idents<F>(self, callback: F) -> Self
                     where
-                        F: 'static + Fn(&mut Context, #callback_types) {
+                        F: 'static + Fn(&mut EventContext, #callback_types) {
                             if let Some(view) = self.cx.views.get_mut(&self.entity) {
                                 if let Some(down) = view.downcast_mut::<#ident #generics>() {
                                     down.#callback_idents = Some(Box::new(callback));

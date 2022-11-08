@@ -1,4 +1,7 @@
-use vizia::{Context, Handle, Lens, View};
+use vizia::context::{Context, DrawContext};
+use vizia::events::Event;
+use vizia::prelude::*;
+use vizia::{vg, vg::renderer::OpenGl};
 
 pub struct DragLabel<L>
 where
@@ -20,13 +23,13 @@ impl<L> View for DragLabel<L>
 where
     L: Lens<Target = String>,
 {
-    fn element(&self) -> Option<String> {
-        Some("lily-label".to_string())
+    fn element(&self) -> Option<&'static str> {
+        Some("lily-label")
     }
 
-    fn event(&mut self, cx: &mut vizia::Context, event: &mut vizia::Event) {}
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {}
 
-    fn draw(&self, cx: &mut vizia::DrawContext, canvas: &mut vizia::Canvas) {
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut vizia::vg::Canvas<OpenGl>) {
         // let entity = cx.current();
         // let rect = cx.cache().get_bounds(entity);
         // TODO: Draw text

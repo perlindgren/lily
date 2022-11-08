@@ -1,9 +1,10 @@
 use crate::util::{BoundingBoxExt, RangeExt};
-use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
 use std::{marker::PhantomData, ops::RangeInclusive};
-use vizia::*;
+// use vizia::context::Context;
+use vizia::prelude::*;
+use vizia::vg::{Paint, Path};
 
 const VERTICAL: bool = true;
 const HORIZONTAL: bool = false;
@@ -16,7 +17,7 @@ where
     value: PhantomData<L>,
     range: PhantomData<RangeInclusive<f32>>,
     #[callback(f32)]
-    on_changing: Option<Box<dyn Fn(&mut Context, f32)>>,
+    on_changing: Option<Box<dyn Fn(&mut EventContext, f32)>>,
 }
 
 pub enum InternalEvent {
@@ -55,11 +56,11 @@ impl<L> View for DragSlider<L>
 where
     L: Lens<Target = f32>,
 {
-    fn element(&self) -> Option<String> {
-        Some("slider".to_string())
+    fn element(&self) -> Option<&'static str> {
+        Some("slider")
     }
 
-    fn event(&mut self, cx: &mut Context, event: &mut Event) {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         event.map(|ev: &InternalEvent, _| match *ev {
             InternalEvent::Changing(value) => {
                 if let Some(callback) = &self.on_changing {
@@ -82,14 +83,14 @@ where
     /// that values don't skip when first dragging to to cursor position
     offset: f32,
     #[callback(f32)]
-    on_changing: Option<Box<dyn Fn(&mut Context, f32)>>,
+    on_changing: Option<Box<dyn Fn(&mut EventContext, f32)>>,
 }
 
 impl<L> View for SliderBar<L>
 where
     L: Lens<Target = f32>,
 {
-    fn event(&mut self, cx: &mut Context, event: &mut Event) {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         event.map(|ev: &WindowEvent, _| match *ev {
             WindowEvent::MouseEnter => self.hover = true,
             WindowEvent::MouseLeave => {
@@ -100,7 +101,7 @@ where
                     cx.capture();
                     self.active = true;
                     // set the offset
-                    let rect = cx.cache.get_bounds(cx.current);
+                    let rect = cx.cache.get_bounds(cx.current());
                     let mouse_pos: Vec2 = (cx.mouse.cursorx, cx.mouse.cursory).into();
                     // get the difference between the mapped mouse pos and
                     // the current value
@@ -127,7 +128,7 @@ where
                     if let Some(callback) = &self.on_changing {
                         // determine whether we are reacting to a vertical
                         // or horizontal slider
-                        let rect = cx.cache.get_bounds(cx.current);
+                        let rect = cx.cache.get_bounds(cx.current());
                         let orientation = rect.h > rect.w;
                         // let scalar = match
                         //     cx.modifiers.contains(Modifiers::SHIFT) {
@@ -168,13 +169,10 @@ where
         });
     }
     fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
-        let background_color = cx
-            .background_color(cx.current())
-            .cloned()
-            .unwrap_or_default();
-        let active_color = cx.border_color(cx.current()).cloned().unwrap_or_default();
-        let current = cx.current();
-        let mut rect = cx.cache().get_bounds(current);
+        let background_color = cx.background_color().cloned().unwrap_or_default();
+        let active_color = cx.border_color().cloned().unwrap_or_default();
+
+        let mut rect = cx.bounds();
 
         // determine whether we are drawing a vertical or horizontal slider
         let orientation = rect.h > rect.w;
@@ -197,7 +195,7 @@ where
         // Draw bar background
         let mut path = Path::new();
         path.rect(rect.x, rect.y, rect.w, rect.h);
-        canvas.fill_path(&mut path, Paint::color(background_color.into()));
+        canvas.fill_path(&mut path, &Paint::color(background_color.into()));
 
         // Draw bar line control
         let mut path = Path::new();
@@ -224,7 +222,7 @@ where
             ),
         };
 
-        canvas.fill_path(&mut path, Paint::color(active_color.into()));
+        canvas.fill_path(&mut path, &Paint::color(active_color.into()));
     }
 }
 impl<L> SliderBar<L>
