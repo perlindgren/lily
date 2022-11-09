@@ -5,7 +5,7 @@ use lily::{
     DEFAULT_STYLE,
 };
 use std::ops::RangeInclusive;
-use vizia::*;
+use vizia::prelude::*;
 
 #[derive(Lens)]
 pub struct AppData {
@@ -47,7 +47,7 @@ pub enum AppEvent {
 }
 
 impl Model for AppData {
-    fn event(&mut self, _cx: &mut Context, event: &mut Event) {
+    fn event(&mut self, _cx: &mut EventContext, event: &mut Event) {
         event.map(|ev: &AppEvent, _| match *ev {
             AppEvent::XyControl { point } => {
                 self.xy_data = point;
@@ -83,8 +83,8 @@ fn main() {
             HStack::new(cx, |cx| {
                 // XY Pad
                 VStack::new(cx, |cx| {
-                    XyPad::new(cx, AppData::xy_data)
-                        .on_changing_point(|cx, point| cx.emit(AppEvent::XyControl { point }));
+                    // XyPad::new(cx, AppData::xy_data)
+                    //     .on_changing_point(|cx, point| cx.emit(AppEvent::XyControl { point }));
                     DragSlider::new(cx, AppData::xy_data.map(|pos| pos.x), -1f32..=1f32)
                         .on_changing(|cx, val| {
                             cx.emit(AppEvent::XyControl {

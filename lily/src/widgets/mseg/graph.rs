@@ -1,9 +1,9 @@
 use crate::util::CurvePoints;
-use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
 use std::{cmp::Ordering, collections::HashMap, ops::RangeInclusive};
 use vizia::prelude::*;
+use vizia::vg;
 
 use super::util::{data_to_bounds_pos_range, data_to_ui_pos_range, ui_to_data_pos_range};
 
@@ -95,7 +95,7 @@ where
     P: Lens<Target = CurvePoints>,
     R: Lens<Target = RangeInclusive<f32>>,
 {
-    fn event(&mut self, cx: &mut Context, event: &mut vizia::Event) {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         let points = self.points.get(cx);
         let ui_points: Vec<Vec2> = points
             .iter()
@@ -213,14 +213,13 @@ where
         });
     }
     fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
-        let default_color: Color = cx.border_color(cx.current()).cloned().unwrap_or_default();
+        let default_color: Color = cx.border_color().copied().unwrap_or_default();
 
         // points
         let range = self
             .range
             .view(cx.data().unwrap(), |range| range.unwrap().clone());
-        let current = cx.current();
-        let bounds = cx.cache().get_bounds(current);
+        let bounds = cx.bounds();
         self.points.view(cx.data().unwrap(), |points| {
             let points = points.unwrap();
             let ui_points: Vec<(_, _)> = points
@@ -240,7 +239,7 @@ where
                 .collect();
 
             // Draw lines
-            let mut lines = Path::new();
+            let mut lines = vg::Path::new();
             for (i, point) in &ui_points {
                 if i == &0 {
                     lines.move_to(point.x, point.y);
@@ -250,33 +249,33 @@ where
             }
             canvas.stroke_path(
                 &mut lines,
-                Paint::color(default_color.into()).with_line_width(2f32),
+                &vg::Paint::color(default_color.into()).with_line_width(2f32),
             );
 
             let point_entity = *self.classes.get("point").unwrap();
-            let active_point_color = cx
-                .background_color(point_entity)
-                .cloned()
+            let active_point_color = cx.style
+                .background_color.get(point_entity)
+                .copied()
                 .unwrap_or_default();
-            let point_color = cx.border_color(point_entity).cloned().unwrap_or_default();
+            let point_color = cx.style.border_color.get(point_entity).cloned().unwrap_or_default();
 
             for (i, point) in &ui_points {
                 // check for hover
                 if self.active_point_id.map(|x| &x == i).unwrap_or_default() {
-                    let mut path = Path::new();
+                    let mut path = vg::Path::new();
                     path.circle(point.x, point.y, 4.0);
-                    canvas.fill_path(&mut path, Paint::color(active_point_color.into()));
+                    canvas.fill_path(&mut path, &vg::Paint::color(active_point_color.into()));
 
-                    let mut path = Path::new();
+                    let mut path = vg::Path::new();
                     path.circle(point.x, point.y, 8.0);
                     canvas.stroke_path(
                         &mut path,
-                        Paint::color(active_point_color.into()).with_line_width(2f32),
+                        &vg::Paint::color(active_point_color.into()).with_line_width(2f32),
                     );
                 } else {
-                    let mut path = Path::new();
+                    let mut path = vg::Path::new();
                     path.circle(point.x, point.y, 4.0);
-                    canvas.fill_path(&mut path, Paint::color(point_color.into()));
+                    canvas.fill_path(&mut path, &vg::Paint::color(point_color.into()));
                 }
             }
 

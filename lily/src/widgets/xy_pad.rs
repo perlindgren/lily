@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
-use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
-use vizia::*;
+use vizia::prelude::*;
+use vizia::vg;
 
 use crate::util::BoundingBoxExt;
 
@@ -56,11 +56,11 @@ impl<P> View for XyPad<P>
 where
     P: Lens<Target = Vec2>,
 {
-    fn element(&self) -> Option<String> {
-        Some("xy".to_string())
+    fn element(&self) -> Option<&'static str> {
+        Some("xy")
     }
 
-    fn event(&mut self, cx: &mut Context, event: &mut Event) {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         // If clicking and hovered, set the state to dragging
         event.map(|ev: &WindowEvent, _| match *ev {
             WindowEvent::MouseEnter => {
@@ -78,7 +78,7 @@ where
                     let mouse_pos = Vec2::new(x, y);
                     let mouse_pos_scaled = cx
                         .cache
-                        .get_bounds(cx.current)
+                        .get_bounds(cx.current())
                         .map_ui_point_unbounded(mouse_pos, true);
                     let final_value = (mouse_pos_scaled + self.offset)
                         .clamp(Vec2::splat(-1f32), Vec2::splat(1f32));
@@ -121,16 +121,15 @@ where
     }
 
     fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
-        let entity = cx.current();
-        let rect = cx.cache().get_bounds(entity);
-        let bg = cx.background_color(entity).cloned().unwrap_or_default();
-        let border = cx.border_color(entity).cloned().unwrap_or_default();
+        let rect = cx.bounds();
+        let bg = cx.background_color().copied().unwrap_or_default();
+        let border = cx.border_color().copied().unwrap_or_default();
 
         // Draw background shapes
         // Background
         let mut path = Path::new();
         path.rect(rect.x, rect.y, rect.w, rect.h);
-        canvas.fill_path(&mut path, Paint::color(bg.into()));
+        canvas.fill_path(&mut path, &Paint::color(bg.into()));
 
         // XY center lines
         let (center_top_x, center_top_y) = rect.center_top();

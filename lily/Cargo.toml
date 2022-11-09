@@ -23,11 +23,6 @@ features = ["derive"]
 [dependencies.lily-derive]
 path = "../lily-derive"
 
-[dependencies.femtovg]
-git = "https://github.com/femtovg/femtovg"
-rev = "87fe627794f3f793d8e3a338c838a2f8e8a8aa9d"
-default-features = false
-
 # [dependencies.nih_plug]
 # git = "https://github.com/robbert-vdh/nih-plug"
 # features = ["assert_process_allocs"]

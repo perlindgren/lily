@@ -7,26 +7,26 @@ use vizia::prelude::*;
 
 /// Convert a screen value to its data position
 pub fn ui_to_data_pos_range(
-    cx: &Context,
+    cx: &EventContext,
     ui_point: &Vec2,
     range_data: impl Lens<Target = RangeInclusive<f32>>,
     max_data: f32,
 ) -> Vec2 {
     _ui_to_data_pos_range(
-        cx.cache.get_bounds(cx.current),
+        cx.cache.get_bounds(cx.current()),
         *ui_point,
         range_data.get(cx),
         max_data,
     )
 }
 pub fn data_to_ui_pos_range(
-    cx: &Context,
+    cx: &EventContext,
     point: Vec2,
     range_data: impl Lens<Target = RangeInclusive<f32>>,
     max: f32,
 ) -> Vec2 {
     data_to_bounds_pos_range(
-        cx.cache.get_bounds(cx.current),
+        cx.cache.get_bounds(cx.current()),
         point,
         range_data.get(cx),
         max,
