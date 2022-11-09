@@ -2,10 +2,10 @@ mod label;
 // mod mseg;
 mod slider;
 // mod xy_pad;
-// mod zoomer;
+mod zoomer;
 
 pub use label::DragLabel;
 // mseg::{Mseg, MsegHandle},
-// slider::{DragSlider, DragSliderHandle},
+pub use slider::{DragSlider, DragSliderHandle};
 // xy_pad::{XyPad, XyPadHandle},
 // zoomer::{Zoomer, ZoomerHandle},

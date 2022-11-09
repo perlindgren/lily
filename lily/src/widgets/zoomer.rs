@@ -1,12 +1,13 @@
 use std::ops::RangeInclusive;
 
-use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
-use vizia::{
-    Actions, Binding, Context, DrawContext, Element, Handle, Lens, LensExt, MouseButton, Units::*,
-    View, WindowEvent, ZStack,
-};
+use vizia::prelude::*;
+use vizia::vg::{Paint, Path};
+// use vizia::{
+//     Actions, Binding, Context, DrawContext, Element, Handle, Lens, LensExt, MouseButton, Units::*,
+//     View, WindowEvent, ZStack,
+// };
 
 const HANDLE_SIZE: f32 = 16.0;
 const SMALLEST_RANGE: f32 = 0.1;
@@ -20,11 +21,11 @@ where
     range: R,
     status: ZoomerEvent,
     #[callback(f32, f32)]
-    on_changing_both: Option<Box<dyn Fn(&mut Context, f32, f32)>>,
+    on_changing_both: Option<Box<dyn Fn(&mut EventContext, f32, f32)>>,
     #[callback(f32)]
-    on_changing_end: Option<Box<dyn Fn(&mut Context, f32)>>,
+    on_changing_end: Option<Box<dyn Fn(&mut EventContext, f32)>>,
     #[callback(f32)]
-    on_changing_start: Option<Box<dyn Fn(&mut Context, f32)>>,
+    on_changing_start: Option<Box<dyn Fn(&mut EventContext, f32)>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -44,22 +45,17 @@ impl ZoomerControl {
 }
 
 impl View for ZoomerControl {
-    fn draw(&self, cx: &mut DrawContext, canvas: &mut vizia::Canvas) {
-        let current = cx.current();
-        let bounds = cx.cache().get_bounds(current);
-        let background_color = cx
-            .background_color(cx.current())
-            .cloned()
-            .unwrap_or_default()
-            .into();
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
+        let bounds = cx.bounds();
+        let background_color = cx.background_color().cloned().unwrap_or_default();
 
         let mut path = Path::new();
         path.rect(bounds.x, bounds.y, bounds.w, bounds.h);
 
         // Fill with background color
-        let paint = Paint::color(background_color);
+        let paint = Paint::color(background_color.into());
         // Fill the quad
-        canvas.fill_path(&mut path, paint);
+        canvas.fill_path(&mut path, &paint);
 
         // paint some grabby lines
         let height_offset = bounds.h / 6f32;
@@ -89,7 +85,7 @@ impl View for ZoomerControl {
         // } else {
         // };
 
-        canvas.stroke_path(&mut path, paint);
+        canvas.stroke_path(&mut path, &paint);
     }
 }
 
@@ -106,7 +102,7 @@ where
             range: range.clone(),
         }
         .build(cx, |cx| {
-            let parent_entity = cx.current;
+            let parent_entity = cx.current();
 
             Binding::new(cx, range.clone(), move |cx, _internal| {
                 ZStack::new(cx, |cx| {
@@ -141,22 +137,23 @@ where
                                 });
                         });
 
-                    // End handle
-                    let w = cx.cache.get_width(parent_entity);
-                    ZoomerControl::new(cx)
-                        .class("handle")
-                        .height(Stretch(1.0))
-                        .bind(range.clone(), move |handle, value| {
-                            let val = value.get(handle.cx);
+                    // // End handle
+                    // // let w = cx.cache.get_width(parent_entity);
+                    // let w = cx.current().width();
+                    // ZoomerControl::new(cx)
+                    //     .class("handle")
+                    //     .height(Stretch(1.0))
+                    //     .bind(range.clone(), move |handle, value| {
+                    //         let val = value.get(handle.cx);
 
-                            handle
-                                .left(Stretch(1f32))
-                                .right(Pixels((1f32 - *val.end()) * w))
-                                .width(Pixels(HANDLE_SIZE))
-                                .on_press(move |cx| {
-                                    cx.emit(ZoomerEvent::SetEnd);
-                                });
-                        });
+                    //         handle
+                    //             .left(Stretch(1f32))
+                    //             .right(Pixels((1f32 - *val.end()) * w))
+                    //             .width(Pixels(HANDLE_SIZE))
+                    //             .on_press(move |cx| {
+                    //                 cx.emit(ZoomerEvent::SetEnd);
+                    //             });
+                    //     });
                 });
             });
         })
@@ -169,11 +166,11 @@ impl<R> View for Zoomer<R>
 where
     R: Lens<Target = RangeInclusive<f32>>,
 {
-    fn element(&self) -> Option<String> {
-        Some("zoomer".to_string())
+    fn element(&self) -> Option<&'static str> {
+        Some("zoomer")
     }
 
-    fn event(&mut self, cx: &mut Context, event: &mut vizia::Event) {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         event.map(|ev: &ZoomerEvent, _| {
             self.status = *ev;
         });
@@ -181,10 +178,10 @@ where
         event.map(|ev: &WindowEvent, _| match *ev {
             // Respond to cursor movements when we are setting the start or end
             WindowEvent::MouseMove(x, _y) => {
-                let width = cx.cache.get_width(cx.current);
+                let width = cx.cache.get_width(cx.current());
                 let range = self.range.get(cx);
                 // adjust X to be relative
-                let mut x = x - cx.cache.get_bounds(cx.current).x;
+                let mut x = x - cx.cache.get_bounds(cx.current()).x;
                 // get new data x
                 x /= width;
                 match self.status {
@@ -222,20 +219,19 @@ where
         });
     }
 
-    fn draw(&self, cx: &mut DrawContext, canvas: &mut vizia::Canvas) {
-        let current = cx.current();
-        let (width, height) = (
-            cx.cache().get_width(current),
-            cx.cache().get_height(current),
-        );
-        let background_color: femtovg::Color = cx
-            .background_color(cx.current())
-            .cloned()
-            .unwrap_or_default()
-            .into();
+    fn draw(&self, cx: &mut DrawContext, canvas: &mut Canvas) {
+        // Please check: Not sure if this translation is correct...
+        // before:
+        // let current = cx.current;
+        // let (width, height) = (cx.cache.get_width(current), cx.cache.get_height(current));
+        // now:
+        let rect = cx.bounds();
+        let (width, height) = (rect.w, rect.h);
+
+        let background_color = cx.background_color().cloned().unwrap_or_default();
         // Draw background rect
         let mut path = Path::new();
         path.rect(0f32, 0f32, width, height);
-        canvas.fill_path(&mut path, Paint::color(background_color));
+        canvas.fill_path(&mut path, &Paint::color(background_color.into()));
     }
 }

@@ -3,7 +3,7 @@ use femtovg::{Paint, Path};
 use glam::Vec2;
 use lily_derive::Handle;
 use std::{cmp::Ordering, collections::HashMap, ops::RangeInclusive};
-use vizia::*;
+use vizia::prelude::*;
 
 use super::util::{data_to_bounds_pos_range, data_to_ui_pos_range, ui_to_data_pos_range};
 
@@ -39,13 +39,13 @@ where
     is_dragging_point: bool,
 
     #[callback(usize, Vec2)]
-    on_changing_point: Option<Box<dyn Fn(&mut Context, usize, Vec2)>>,
+    on_changing_point: Option<Box<dyn Fn(&mut EventContext, usize, Vec2)>>,
 
     #[callback(usize)]
-    on_remove_point: Option<Box<dyn Fn(&mut Context, usize)>>,
+    on_remove_point: Option<Box<dyn Fn(&mut EventContext, usize)>>,
 
     #[callback(usize, Vec2)]
-    on_insert_point: Option<Box<dyn Fn(&mut Context, usize, Vec2)>>,
+    on_insert_point: Option<Box<dyn Fn(&mut EventContext, usize, Vec2)>>,
 }
 
 impl<P, R> MsegGraph<P, R>

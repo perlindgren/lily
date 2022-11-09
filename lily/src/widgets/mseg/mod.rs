@@ -10,7 +10,7 @@ use super::zoomer::{Zoomer, ZoomerHandle};
 use crate::util::CurvePoints;
 use glam::Vec2;
 use lily_derive::Handle;
-use vizia::*;
+use vizia::prelude::*;
 
 #[allow(clippy::enum_variant_names)]
 enum MsegInternalEvent {
@@ -33,22 +33,22 @@ where
     range: PhantomData<R>,
 
     #[callback(usize)]
-    on_remove_point: Option<Box<dyn Fn(&mut Context, usize)>>,
+    on_remove_point: Option<Box<dyn Fn(&mut EventContext, usize)>>,
 
     #[callback(usize, Vec2)]
-    on_insert_point: Option<Box<dyn Fn(&mut Context, usize, Vec2)>>,
+    on_insert_point: Option<Box<dyn Fn(&mut EventContext, usize, Vec2)>>,
 
     #[callback(usize, Vec2)]
-    on_changing_point: Option<Box<dyn Fn(&mut Context, usize, Vec2)>>,
+    on_changing_point: Option<Box<dyn Fn(&mut EventContext, usize, Vec2)>>,
 
     #[callback(f32)]
-    on_changing_range_start: Option<Box<dyn Fn(&mut Context, f32)>>,
+    on_changing_range_start: Option<Box<dyn Fn(&mut EventContext, f32)>>,
 
     #[callback(f32)]
-    on_changing_range_end: Option<Box<dyn Fn(&mut Context, f32)>>,
+    on_changing_range_end: Option<Box<dyn Fn(&mut EventContext, f32)>>,
 
     #[callback(RangeInclusive<f32>)]
-    on_changing_range_both: Option<Box<dyn Fn(&mut Context, RangeInclusive<f32>)>>,
+    on_changing_range_both: Option<Box<dyn Fn(&mut EventContext, RangeInclusive<f32>)>>,
 }
 
 impl<P, R> Mseg<P, R>
