@@ -137,6 +137,22 @@ where
                                 });
                         });
 
+                        ZoomerControl::new(cx)
+                        .class("handle")
+                        .height(Stretch(1.0))
+                        .bind(range.clone(), move |handle, value| {
+                            let val = value.get(handle.cx);
+
+                            handle
+                                .left(Stretch(1f32))
+                                // .right(Pixels((1f32 - *val.end()) * w))
+                                .right(Percentage(100.0 * (1.0 - val.end())))
+                                .width(Pixels(HANDLE_SIZE))
+                                .on_press(move |cx| {
+                                    cx.emit(ZoomerEvent::SetEnd);
+                                });
+                        });
+
                     // // End handle
                     // // let w = cx.cache.get_width(parent_entity);
                     // let w = cx.current().width();

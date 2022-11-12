@@ -93,11 +93,11 @@ where
     P: Lens<Target = CurvePoints>,
     R: Lens<Target = RangeInclusive<f32>>,
 {
-    fn element(&self) -> Option<String> {
-        Some("mseg".to_string())
+    fn element(&self) -> Option<&'static str> {
+        Some("mseg")
     }
 
-    fn event(&mut self, cx: &mut Context, event: &mut Event) {
+    fn event(&mut self, cx: &mut EventContext, event: &mut Event) {
         event.map(|ev: &MsegInternalEvent, _| match *ev {
             MsegInternalEvent::OnChangingRangeStart(x) => {
                 if let Some(callback) = &self.on_changing_range_start {
